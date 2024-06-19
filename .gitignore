@@ -1,0 +1,8 @@
+.venv
+.env
+env
+env/*
+venv
+venv/*
+
+.keys.py
