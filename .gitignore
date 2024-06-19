@@ -5,4 +5,4 @@ env/*
 venv
 venv/*
 
-.keys.py
+keys.py
