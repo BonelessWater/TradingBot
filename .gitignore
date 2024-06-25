@@ -1,9 +1,9 @@
 # Virtual venv
-.venv
-.env
 env
 env/*
 venv
 venv/*
 
 keys.py
+
+db.sqlite3
