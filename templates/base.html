@@ -15,11 +15,12 @@
         
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
         
-        
         <script type="text/javascript" src="{% static 'js/materialize.min.js' %}"></script>
                 
         <title>
-            Portfolio Builder
+            {% block title %}
+            {{ page_title|default:"Untitled Page"}}
+            {% endblock title %}
         </title>
 
     </head>
@@ -45,13 +46,8 @@
                 <li><a href="mobile.html">Indicator info</a></li>
             </ul>
             
-            <div class="col s3">
-
-            </div>
-
-            <div class="col s9">
-                <!-- Teal page content  -->
-            </div>
+            {% block content %}
+            {% endblock content %}
         </div>
 
     </body>

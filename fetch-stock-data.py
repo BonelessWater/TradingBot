@@ -48,6 +48,8 @@ def get_sp500_tickers():
 
 if __name__ == "__main__":
     symbols = get_sp500_tickers()  # Add more stock symbols as needed
+    symbols = symbols[symbols.index('PEP'):]
+    print(symbols)
     for symbol in symbols:
         print(symbol)
         fetch_and_save_stock_data(symbol)
