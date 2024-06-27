@@ -34,23 +34,33 @@ SECRET_KEY = env('django_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'localhost', 
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['https://stockportfoliobuilder.azurewebsites.net', 'localhost', '127.0.0.1']
 
 CORS_ALLOWED_ORIGINS = [
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ]
+    "https://stockportfoliobuilder.azurewebsites.net",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://stockportfoliobuilder.azurewebsites.net',
+]
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Application definition
+
+STATIC_ROOT= os.path.join(BASE_DIR,'staticfiles')
+STATIC_URL = '/static/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+MEDIA_URL = '/media/'
+STATICFILES_DIRS = (
+os.path.join(BASE_DIR, 'static'),
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'playground',

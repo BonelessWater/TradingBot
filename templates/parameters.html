@@ -8,7 +8,7 @@ Parameters
 
 <div class="row">
     <!-- Parameters will be to the side -->
-    <div class="col s3 offset-s1 vert-space">
+    <div class="col s2 offset-s1">
         <h4>Portfolio Config</h4>
         <div class="row">
             <div class="input-field col s12">
@@ -38,11 +38,10 @@ Parameters
             <button class="btn waves-effect waves-light" type="submit" name="action">Submit
             </button>
         </div>
-    <div>
-        <div class="inner">
-            <h1>Stocks</h1>
-            <canvas id="myChart"></canvas>						
-        </div> 
+    </div>
+    <div class="col s8">
+        <h1 class="center">S&#38P 500</h1>
+        <canvas id="myChart"></canvas>
     </div>
 </div>
 
@@ -50,25 +49,55 @@ Parameters
     document.addEventListener('DOMContentLoaded', function() {
     var elems = document.querySelectorAll('.datepicker');
     var instances = M.Datepicker.init(elems, options);
-  });
-  document.addEventListener("DOMContentLoaded", function() {
-        var chartData = JSON.parse('{{ chart_data|escapejs }}');
-        println(chart_data)
-        let ctx = document.getElementById('myChart').getContext('2d');
-        var myChart = new Chart(ctx, {
+    });
+    var chartData = JSON.parse('{{ chart_data|escapejs }}');
+    var chartType = '{{ chart_type|escapejs }}';
+    let ctx = document.getElementById('myChart').getContext('2d');
+    if (chartType == 'line') {
+        config = {
             type: 'line',
             data: {
-                labels: chartData.x,  // Assuming 'x' contains the labels (dates)
+                labels: chartData.x,
                 datasets: [{
-                    label: 'Stock value',
+                    label: 'Value',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderColor: 'rgba(255, 99, 132, 1)',
-                    data: chartData.y, // Assuming 'y' contains the data points
-                    borderWidth: 1
+                    data: chartData.y,
+                    borderWidth: 1,
+                    fill: true,
+                    pointStyle: false,
+                    pointRadius: 0,
+                },
+                {
+                    label: '50-Day Moving Average',
+                    data: chartData.avg,
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    borderDash: [5, 5],
                 }]
             },
-        });
-    });
+        }
+    } else if (chartType == 'scatter') {
+        config = {
+            type: 'scatter',
+            data: {
+                labels: chartData.x,
+                datasets: [{
+                    label: 'Value',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: chartData.y,
+                    borderWidth: 1,
+                    fill: true,
+                    pointStyle: false,
+                    pointRadius: 0,
+                }]
+            },
+        }
+    }
+
+    var myChart = new Chart(ctx, config);
 </script>
 
 {% endblock content %}
