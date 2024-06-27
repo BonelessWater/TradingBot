@@ -4,54 +4,101 @@
 Parameters
 {% endblock title %}
 
-{% block content %}
-
-<div class="row">
-    <!-- Parameters will be to the side -->
-    <div class="col s2 offset-s1">
-        <h4>Portfolio Config</h4>
+{% block sidebar %}
+<div class="sidebar" id="sidebar">
+    <h4 class="center white-text">Portfolio Config</h4>
+    <form method="post">
+        {% csrf_token %}
         <div class="row">
             <div class="input-field col s12">
-                <input placeholder="0" id="amount" type="text" class="validate">
-                <label for="amount">Investment amount</label>
+                <input placeholder="Investment Amount" id="amount" type="text" class="validate" name="amount" value="{{ form.amount.value|default_if_none:'' }}">
+                <label for="amount">{{ form.amount.label }}</label>
+                {% if form.amount.errors %}
+                <div class="red-text">{{ form.amount.errors }}</div>
+                {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="12" id="amount_stocks" type="text" class="validate">
-                <label for="amount_stocks">Number of Stocks</label>
+                <input placeholder="Amount of Stocks" id="amount_stocks" type="text" class="validate" name="amount_stocks" value="{{ form.amount_stocks.value|default_if_none:'' }}">
+                <label for="amount_stocks">{{ form.amount_stocks.label }}</label>
+                {% if form.amount_stocks.errors %}
+                <div class="red-text">{{ form.amount_stocks.errors }}</div>
+                {% endif %}
             </div>
             <div class="input-field col s12">
-                <input type="text" class="datepicker">
-                <label for="time">Date time frame</label>
+                <input placeholder="Time Frame" type="text" class="datepicker datepicker-visible" name="time_frame" value="{{ form.time_frame.value|default_if_none:'' }}">
+                <label for="time_frame">{{ form.time_frame.label }}</label>
+                {% if form.time_frame.errors %}
+                <div class="red-text">{{ form.time_frame.errors }}</div>
+                {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="12" id="horizon" type="text" class="validate">
-                <label for="horizon">Time horizon (months)</label>
+                <input placeholder="Investment Horizon (months)" id="horizon" type="text" class="validate" name="horizon" value="{{ form.horizon.value|default_if_none:'' }}">
+                <label for="horizon">{{ form.horizon.label }}</label>
+                {% if form.horizon.errors %}
+                <div class="red-text">{{ form.horizon.errors }}</div>
+                {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="0.95" id="confidence" type="text" class="validate">
-                <label for="confidence">VaR confidence level</label>
+                <input placeholder="Confidence Level" id="confidence" type="text" class="validate" name="confidence" value="{{ form.confidence.value|default_if_none:'' }}">
+                <label for="confidence">{{ form.confidence.label }}</label>
+                {% if form.confidence.errors %}
+                <div class="red-text">{{ form.confidence.errors }}</div>
+                {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="0.35" id="min_var" type="text" class="validate">
-                <label for="min_var">Min VaR</label>
+                <input placeholder="Minimum Volatility" id="min_var" type="text" class="validate" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
+                <label for="min_var">{{ form.min_var.label }}</label>
+                {% if form.min_var.errors %}
+                <div class="red-text">{{ form.min_var.errors }}</div>
+                {% endif %}
             </div>
-            <button class="btn waves-effect waves-light" type="submit" name="action">Submit
-            </button>
+            <button class="btn waves-effect waves-light" type="submit" name="action">Submit</button>
         </div>
-    </div>
-    <div class="col s8">
-        <h1 class="center">S&#38P 500</h1>
+    </form>
+</div>
+{% endblock sidebar %}
+
+{% block content %}
+<div class="col s12">
+    <h4 class="center white-text">{{ title }}</h4>
+    <div class="row">
         <canvas id="myChart"></canvas>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    var elems = document.querySelectorAll('.datepicker');
-    var instances = M.Datepicker.init(elems, options);
+        var elems = document.querySelectorAll('.datepicker');
+        var instances = M.Datepicker.init(elems, {
+            format: 'yyyy-mm-dd'
+        });
     });
+
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var chartType = '{{ chart_type|escapejs }}';
+
+    if (chartType == 'scatter'){
+        // Calculate min and max Sharpe ratios
+        minSharpe = Math.min(...chartData.sharpe);
+        maxSharpe = Math.max(...chartData.sharpe);
+
+        // Create the dataset with dynamic colors
+        data = chartData.x.map((x, i) => {
+            color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
+            return {
+                x: x,
+                y: chartData.y[i],
+                backgroundColor: color,
+                borderColor: color,
+                pointRadius: 3,
+            };
+        });
+    }
+    function interpolateColor(value, min, max) {
+        scale = d3.scaleSequential(d3.interpolateViridis).domain([min, max]);
+        return scale(value);
+    }
+
     let ctx = document.getElementById('myChart').getContext('2d');
     if (chartType == 'line') {
         config = {
@@ -82,22 +129,36 @@ Parameters
         config = {
             type: 'scatter',
             data: {
-                labels: chartData.x,
                 datasets: [{
-                    label: 'Value',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    data: chartData.y,
-                    borderWidth: 1,
-                    fill: true,
-                    pointStyle: false,
-                    pointRadius: 0,
+                    label: 'Efficient Frontier',
+                    data: data,
+                    fill: false,
+                    pointStyle: 'circle',
+                    pointRadius: 2.5,
                 }]
             },
-        }
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Risk'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Return'
+                        }
+                    }
+                }
+            }
+        };
     }
 
     var myChart = new Chart(ctx, config);
 </script>
-
 {% endblock content %}

@@ -1,6 +1,10 @@
+
 .logo-img {
-    width: 60px;
-    height: 60px;
+  width: 60px;
+  height: 60px;
+}
+.translate {
+  transform: translateX(45px);
 }
 .icon-block {
   padding: 0 15px;
@@ -8,6 +12,75 @@
 .icon-block .material-icons {
 	font-size: inherit;
 }
-.input-field {
-    margin-bottom: 50px; 
+.input-field label, 
+.input-field input[type="text"], 
+.input-field input[type="date"]:not(.datepicker-visible),
+.input-field input[type="text"]::placeholder {
+  color: #cbcbcb;
+  font-weight: bold;
+}
+.input-field .validate:focus,
+.input-field .datepicker:focus {
+  border-bottom: 1px solid white;
+  box-shadow: 0 1px 0 0 white;
+}
+.input-field .validate.valid,
+.input-field .datepicker.valid {
+  border-bottom: 1px solid white;
+  box-shadow: 0 1px 0 0 white;
+}
+.datepicker-visible {
+  z-index: 1001;
+  color: black;
+  background-color: grey;
+}
+html, body {
+  height: 100%;
+  margin: 0;
+}
+.main-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.content {
+  flex: 1 0 auto;
+  display: flex;
+  position: relative;
+}
+.page-footer {
+  flex-shrink: 0;
+}
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 700px;
+  background-color: #ff8a80;
+  transform: translateX(-700px);
+  transition: transform 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 20px;
+}
+.sidebar.visible {
+  transform: translateX(0);
+}
+.content-area {
+  flex-grow: 1;
+  padding-left: 20px;
+}
+.toggle-button {
+  z-index: 1001;
+  position: absolute;
+  top: -10px;
+  left: 5px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 5px;
+}
+.toggle-button i {
+  color: white;
+  font-size: 24px;
 }

@@ -14,3 +14,6 @@ certifi==2024.6.2
 charset-normalizer==3.3.2
 urllib3==2.2.1
 wheel==0.43.0
+plotly==5.22.0
+PyPortfolioOpt==1.5.5
+get-all-tickers==1.8
