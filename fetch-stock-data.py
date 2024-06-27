@@ -12,7 +12,7 @@ from playground.models import StockData
 def fetch_and_save_stock_data(symbol):
     # Fetch the historical data
     stock = yf.Ticker(symbol)
-    hist = stock.history(start='2020-01-01')
+    hist = stock.history(start='2024-01-01')
 
     # Save the data to the database
     for index, row in hist.iterrows():
