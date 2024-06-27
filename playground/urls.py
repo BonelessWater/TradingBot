@@ -7,6 +7,7 @@ from .views import *
 urlpatterns = [
     
     # menu links
-    path('', main, name="main"),
+    path('', main, name='main'),
+    path('parameters', parameters, name='parameters'),
     
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

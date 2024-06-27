@@ -6,8 +6,60 @@ Home
 
 {% block content %}
 
-<p>
-    pookie
-</p>
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+      <br><br>
+      <h1 class="header center red-text accent-3">Build your Portfolio</h1>
+      <div class="row center">
+        <h5 class="header col s12 light">A stock portfolio builder based on rigorous statistical methods and artificial intelligence</h5>
+      </div>
+      <div class="row center">
+        <form action="{% url 'parameters' %}" method="post"> 
+          {% csrf_token %}
+        <button id="download-button" class="btn-large waves-effect waves-light green accent-3" type="submit">Get Started</button>
+    </form> 
+      </div>
+      <br><br>
+
+    </div>
+  </div>
+
+
+  <div class="container">
+    <div class="section">
+
+      <!--   Icon Section   -->
+      <div class="row">
+        <div class="col s12 m4">
+          <div class="icon-block">
+            <h2 class="center light-blue-text"><i class="material-icons">flash_on</i></h2>
+            <h5 class="center">Speeds up research</h5>
+
+            <p class="light">Instead of looking for stock information one search at a time, we have everything that you might need to assist in your investments. More seasoned investors can enjoy for more nuanced details we provide aswell.</p>
+          </div>
+        </div>
+
+        <div class="col s12 m4">
+          <div class="icon-block">
+            <h2 class="center light-blue-text"><i class="material-icons">group</i></h2>
+            <h5 class="center">User Experience Focused</h5>
+
+            <p class="light">By the click of a button and a short questionaire we can maximize returns and minimize risk by building a portfolio that best suits your needs.</p>
+          </div>
+        </div>
+
+        <div class="col s12 m4">
+          <div class="icon-block">
+            <h2 class="center light-blue-text"><i class="material-icons">settings</i></h2>
+            <h5 class="center">Easy to work with</h5>
+
+            <p class="light">With the use of simple-to-use parameters, we can represent your wants and needs with calculations behind the scenes. Disclaimer: this website is meant to be a supplementary source of data, not an end-all be-all.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <br><br>
+  </div>
 
 {% endblock content %}
