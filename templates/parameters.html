@@ -6,16 +6,69 @@ Parameters
 
 {% block content %}
 
-
-<div class="row container">
+<div class="row">
     <!-- Parameters will be to the side -->
-    <div class="col s3">
-    <h1>hi</h1>
+    <div class="col s3 offset-s1 vert-space">
+        <h4>Portfolio Config</h4>
+        <div class="row">
+            <div class="input-field col s12">
+                <input placeholder="0" id="amount" type="text" class="validate">
+                <label for="amount">Investment amount</label>
+            </div>
+            <div class="input-field col s12">
+                <input placeholder="12" id="amount_stocks" type="text" class="validate">
+                <label for="amount_stocks">Number of Stocks</label>
+            </div>
+            <div class="input-field col s12">
+                <input type="text" class="datepicker">
+                <label for="time">Date time frame</label>
+            </div>
+            <div class="input-field col s12">
+                <input placeholder="12" id="horizon" type="text" class="validate">
+                <label for="horizon">Time horizon (months)</label>
+            </div>
+            <div class="input-field col s12">
+                <input placeholder="0.95" id="confidence" type="text" class="validate">
+                <label for="confidence">VaR confidence level</label>
+            </div>
+            <div class="input-field col s12">
+                <input placeholder="0.35" id="min_var" type="text" class="validate">
+                <label for="min_var">Min VaR</label>
+            </div>
+            <button class="btn waves-effect waves-light" type="submit" name="action">Submit
+            </button>
+        </div>
+    <div>
+        <div class="inner">
+            <h1>Stocks</h1>
+            <canvas id="myChart"></canvas>						
+        </div> 
     </div>
-    <div class="col s9">
-    <p>hi</p>
-    </div>
-
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.datepicker');
+    var instances = M.Datepicker.init(elems, options);
+  });
+  document.addEventListener("DOMContentLoaded", function() {
+        var chartData = JSON.parse('{{ chart_data|escapejs }}');
+        println(chart_data)
+        let ctx = document.getElementById('myChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.x,  // Assuming 'x' contains the labels (dates)
+                datasets: [{
+                    label: 'Stock value',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: chartData.y, // Assuming 'y' contains the data points
+                    borderWidth: 1
+                }]
+            },
+        });
+    });
+</script>
 
 {% endblock content %}
