@@ -1,4 +1,5 @@
 # Virtual venv
+.env
 env
 env/*
 venv
