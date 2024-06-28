@@ -19,3 +19,4 @@ PyPortfolioOpt==1.5.5
 get-all-tickers==1.8
 python-decouple==3.8
 mysqlclient==2.2.4
+yfinance==0.2.40
