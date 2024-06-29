@@ -8,4 +8,3 @@ class ParametersForm(forms.Form):
     confidence = forms.DecimalField(label='VaR confidence level')
     min_var = forms.DecimalField(label='Min VaR')
 
-    

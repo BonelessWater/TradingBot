@@ -33,13 +33,13 @@
         <nav>
             <div class="nav-wrapper white z-depth-2" style="position: relative;">
                 <img src="{% static 'images/tree.png' %}" id="logo-img" class="logo-img translate">
-                <a href="#" class="brand-logo translate black-text">Portfolio Builder</a>
+                <a href="{% url 'main' %}" class="brand-logo translate black-text">Portfolio Builder</a>
                 <!-- Menu button for toggling sidebar -->
                 <a href="#" id="toggle-button" class="toggle-button black-text"><i class="material-icons black-text">menu</i></a>
                 <ul class="right hide-on-med-and-down">
-                    <li><a href="sass.html" class="black-text">Parameters</a></li>
-                    <li><a href="badges.html" class="black-text">Stock Search</a></li>
-                    <li><a href="collapsible.html" class="black-text">Research</a></li>
+                    <li><a href="{% url 'main' %}" class="black-text">Home</a></li>
+                    <li><a href="{% url 'parameters' %}" class="black-text">Parameters</a></li>
+                    <li><a href="{% url 'research' %}" class="black-text">Research</a></li>
                     <li><a href="mobile.html" class="black-text">Indicator info</a></li>
                 </ul>
             </div>
@@ -64,6 +64,8 @@
             var toggleButton = document.getElementById('toggle-button');
             var sidebar = document.getElementById('sidebar');
             var datePickers = document.querySelectorAll('.datepicker');
+            var elems = document.querySelectorAll('select');
+            var instances = M.FormSelect.init(elems);
 
             if (toggleButton && sidebar) {
                 toggleButton.addEventListener('click', function() {

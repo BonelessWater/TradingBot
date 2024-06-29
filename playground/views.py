@@ -157,4 +157,22 @@ def parameters(request):
             return render(request, 'parameters.html', {'title': 'Efficient Frontier','chart_data': chart_data, 'chart_type': 'scatter'})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})
-        
+
+def get_stock_data(ticker):
+    stock_data = StockData.objects.filter(symbol=ticker).order_by('date').values('date', 'close_price')
+    
+    # Arrange data into the desired format
+    data = {'x': [], 'y': []}
+    for entry in stock_data:
+        data['x'].append(entry['date'].strftime('%Y-%m-%d'))
+        data['y'].append(entry['close_price'])
+    return json.dumps(data)
+
+def research(request):
+    tickers = StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol')
+    if request.method == 'POST':
+        selected_ticker = request.POST.get('ticker')
+        chart_data = get_stock_data(selected_ticker)
+        return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker})
+    return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500'})
+    

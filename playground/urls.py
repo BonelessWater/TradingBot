@@ -8,6 +8,9 @@ urlpatterns = [
     
     # menu links
     path('', main, name='main'),
-    path('parameters', parameters, name='parameters'),
+
+    # Redirects
+    path('parameters', parameters, name='parameters'),    
+    path('research', research, name='research'),
     
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
