@@ -5,20 +5,11 @@ import yfinance as yf
 import datetime
 import json
 import numpy as np
-import plotly.express as px
 import pandas as pd
-import math
-import statistics as stat
-import datetime as dt
 from pypfopt.efficient_frontier import EfficientFrontier
-from pypfopt.expected_returns import mean_historical_return
-from pypfopt.risk_models import CovarianceShrinkage
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
-from pypfopt import risk_models
-from pypfopt import expected_returns
 from datetime import date
-from dateutil.relativedelta import relativedelta
 from statistics import NormalDist
 
 def main(request):

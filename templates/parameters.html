@@ -5,51 +5,51 @@ Parameters
 {% endblock title %}
 
 {% block sidebar %}
-<div class="sidebar" id="sidebar">
-    <h4 class="center white-text">Portfolio Config</h4>
+<div class="sidebar red lighten-5" id="sidebar">
+    <h4 class="center black-text" style="margin-top: 20px; font-weight: bold; font-size: 24px;">Portfolio Config</h4>
     <form method="post">
         {% csrf_token %}
         <div class="row">
             <div class="input-field col s12">
-                <input placeholder="Investment Amount" id="amount" type="text" class="validate" name="amount" value="{{ form.amount.value|default_if_none:'' }}">
-                <label for="amount">{{ form.amount.label }}</label>
+                <input placeholder="Investment Amount" id="amount" type="text" class="validate black-text" name="amount" value="{{ form.amount.value|default_if_none:'' }}">
+                <label for="amount" class="black-text">{{ form.amount.label }}</label>
                 {% if form.amount.errors %}
-                <div class="red-text">{{ form.amount.errors }}</div>
+                <div class="black-text">{{ form.amount.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Amount of Stocks" id="amount_stocks" type="text" class="validate" name="amount_stocks" value="{{ form.amount_stocks.value|default_if_none:'' }}">
-                <label for="amount_stocks">{{ form.amount_stocks.label }}</label>
+                <input placeholder="Amount of Stocks" id="amount_stocks" type="text" class="validate black-text" name="amount_stocks" value="{{ form.amount_stocks.value|default_if_none:'' }}">
+                <label for="amount_stocks" class="black-text">{{ form.amount_stocks.label }}</label>
                 {% if form.amount_stocks.errors %}
-                <div class="red-text">{{ form.amount_stocks.errors }}</div>
+                <div class="black-text">{{ form.amount_stocks.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Time Frame" type="text" class="datepicker datepicker-visible" name="time_frame" value="{{ form.time_frame.value|default_if_none:'' }}">
-                <label for="time_frame">{{ form.time_frame.label }}</label>
+                <input placeholder="Time Frame (DD/MM/YYYY)" id="time_frame" type="text" class="validate black-text" name="time_frame" value="{{ form.time_frame.value|default_if_none:'' }}">
+                <label for="time_frame" class="black-text">{{ form.time_frame.label }}</label>
                 {% if form.time_frame.errors %}
-                <div class="red-text">{{ form.time_frame.errors }}</div>
+                <div class="black-text">{{ form.time_frame.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Investment Horizon (months)" id="horizon" type="text" class="validate" name="horizon" value="{{ form.horizon.value|default_if_none:'' }}">
-                <label for="horizon">{{ form.horizon.label }}</label>
+                <input placeholder="Investment Horizon (months)" id="horizon" type="text" class="validate black-text" name="horizon" value="{{ form.horizon.value|default_if_none:'' }}">
+                <label for="horizon" class="black-text">{{ form.horizon.label }}</label>
                 {% if form.horizon.errors %}
-                <div class="red-text">{{ form.horizon.errors }}</div>
+                <div class="black-text">{{ form.horizon.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Confidence Level" id="confidence" type="text" class="validate" name="confidence" value="{{ form.confidence.value|default_if_none:'' }}">
-                <label for="confidence">{{ form.confidence.label }}</label>
+                <input placeholder="Confidence Level" id="confidence" type="text" class="validate black-text" name="confidence" value="{{ form.confidence.value|default_if_none:'' }}">
+                <label for="confidence" class="black-text">{{ form.confidence.label }}</label>
                 {% if form.confidence.errors %}
-                <div class="red-text">{{ form.confidence.errors }}</div>
+                <div class="black-text">{{ form.confidence.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Minimum Volatility" id="min_var" type="text" class="validate" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
-                <label for="min_var">{{ form.min_var.label }}</label>
+                <input placeholder="Minimum Volatility" id="min_var" type="text" class="validate black-text" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
+                <label for="min_var" class="black-text">{{ form.min_var.label }}</label>
                 {% if form.min_var.errors %}
-                <div class="red-text">{{ form.min_var.errors }}</div>
+                <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
             <button class="btn waves-effect waves-light" type="submit" name="action">Submit</button>
