@@ -71,6 +71,8 @@ Parameters
     <thead>
         <tr>
             <th>Name</th>
+            <th>Percentage</th>
+            <th>Investment Amount</th>
             <th>Market Cap</th>
             <th>Enterprise Value</th>
             <th>Trailing P/E</th>
@@ -80,9 +82,11 @@ Parameters
         {% for key, item in financial_data.items %}
         <tr>
             <td>{{ item.Ticker }}</td>
-            <td>{{ item.MarketCap }}</td>
-            <td>{{ item.EnterpriseValue }}</td>
-            <td>{{ item.TrailingPE }}</td>
+            <td>{{ item.Percentage }}</td>
+            <td>{{ item.InvestmentAmount }}</td>
+            <td>{{ item.valuation.MarketCap }}</td>
+            <td>{{ item.valuation.EnterpriseValue }}</td>
+            <td>{{ item.valuation.TrailingPE }}</td>
         </tr>
         {% endfor %}
     </tbody>

@@ -15,7 +15,7 @@ from statistics import NormalDist
 def main(request):
     return render(request, 'main.html')
 
-def get_financial_data(symbol):
+def get_financial_data(symbol, investment_amount = -1, weight = 0):
     stock = yf.Ticker(symbol)
 
     # Valuation Measures
@@ -52,37 +52,47 @@ def get_financial_data(symbol):
     free_cash_flow = stock.info.get('freeCashflow')
     return_on_equity = stock.info.get('returnOnEquity')
 
+    valuation = {
+            'ticker': symbol,
+            'marketcap': market_cap,
+            'enterprisevalue': enterprise_value,
+            'trailingpe': trailing_pe,
+            'forwardpe': forward_pe,
+            'pegratio': peg_ratio,
+            'pricesales': price_sales,
+            'pricebook': price_book,
+            'enterpriserevenue': ev_revenue,
+            'enterpriseebitda': ev_ebitda,
+        }
+    
+    finance = {
+        'profit margin': profit_margin,
+        'return on assets (ttm)': return_on_assets,
+        'return on equity (ttm)': return_on_equity,
+        'revenue (ttm)': revenue,
+        'net income avi to common (ttm)': net_income,
+        'diluted eps (ttm)': diluted_eps,
+        'total cash (mrq)': total_cash,
+        'total debt/equity (mrq)': debt_to_equity,
+        'levered free cash flow (ttm)': levered_free_cash_flow,
+    }
+    
     data = {
-        'Ticker': symbol,
-        'MarketCap': market_cap,
-        'EnterpriseValue': enterprise_value,
-        'TrailingPE': trailing_pe,
-        #'Forward P/E': forward_pe,
-        #'PEG Ratio (5yr expected)': peg_ratio,
-        #'Price/Sales (ttm)': price_sales,
-        #'Price/Book (mrq)': price_book,
-        #'Enterprise Value/Revenue': ev_revenue,
-        #'Enterprise Value/EBITDA': ev_ebitda,
-        #'Profit Margin': profit_margin,
-        #'Return on Assets (ttm)': return_on_assets,
-        #'Return on Equity (ttm)': return_on_equity,
-        #'Revenue (ttm)': revenue,
-        #'Net Income Avi to Common (ttm)': net_income,
-        #'Diluted EPS (ttm)': diluted_eps,
-        #'Total Cash (mrq)': total_cash,
-        #'Total Debt/Equity (mrq)': debt_to_equity,
-        #'Levered Free Cash Flow (ttm)': levered_free_cash_flow,
-        #'Earnings Per Share': earnings_per_share,
-        #'Price to Earnings Ratio': price_to_earnings_ratio,
-        #'Dividend Yield': dividend_yield,
-        #'Book Value': book_value,
-        #'Debt to Equity Ratio': debt_to_equity_ratio,
-        #'Revenue Growth': revenue_growth,
-        #'Free Cash Flow': free_cash_flow,
-        #'Return on Equity': return_on_equity
+        'earnings per share': earnings_per_share,
+        'price to earnings ratio': price_to_earnings_ratio,
+        'dividend yield': dividend_yield,
+        'book value': book_value,
+        'debt to equity ratio': debt_to_equity_ratio,
+        'revenue growth': revenue_growth,
+        'free cash flow': free_cash_flow,
+        'return on equity': return_on_equity
     }
 
-    return data
+    if investment_amount != -1:
+        data['Percentage'] = f"{weight*100:.2f}%"
+        data['InvestmentAmount'] = f"{(int(investment_amount) * weight):.3f}"
+
+    return valuation, finance, data
 
 def get_sp500_data():
     # Define the ticker symbol for S&P 500
@@ -224,9 +234,10 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
 
     financial_data = {}
     for symbol in weights:
-        financial_data[symbol] = get_financial_data(symbol)
+        valuation, finance, financial_data[symbol] = get_financial_data(symbol, investment_amount, weights[symbol])
+    
 
-    return json.dumps(data_dict), financial_data
+    return json.dumps(data_dict), valuation, finance, financial_data
 
 def parameters(request):    
     if request.method == 'POST':
@@ -240,9 +251,8 @@ def parameters(request):
             confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
             
-            chart_data, financial_data = get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var)
-            print(financial_data)
-            return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data})
+            chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var)
+            return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})
 
@@ -261,8 +271,7 @@ def research(request):
     if request.method == 'POST':
         selected_ticker = request.POST.get('ticker')
         chart_data = get_stock_data(selected_ticker)
-        financial_data = get_financial_data(selected_ticker)
-        print(financial_data)
-        return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data})
+        valuation, finance, financial_data = get_financial_data(selected_ticker)
+        return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
     

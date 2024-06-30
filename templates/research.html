@@ -33,34 +33,62 @@ Research
     </div>
 </div>
 
+<div class="row">
+    <div class="col s6">
+        <h5 class="left-align">Valuation Measures</h5>
+        <h6 class="right-align">Most recent</h6>
 
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Item Name</th>
-            <th>Item Price</th>
-        </tr>
-    </thead>
+        <div class="col s6">
+            <h6 class="left-align">Ticker</h6>
+            <h6 class="left-align">Market Cap</h6>
+            <h6 class="left-align">Enterprise Value</h6>
+            <h6 class="left-align">Trailing P/E</h6>
+            <h6 class="left-align">Forward P/E</h6>
+            <h6 class="left-align">PEG Ratio (5yr Expected)</h6>
+            <h6 class="left-align">Price/Sales (ttm)</h6>
+            <h6 class="left-align">Price/Bool (mrq)</h6>
+            <h6 class="left-align">Enterprise Value/Revenue</h6>
+            <h6 class="left-align">Enterprise Value/EBITDA</h6>
+            
+        </div>
 
-    <tbody>
-        <tr>
-        <td>Alvin</td>
-        <td>Eclair</td>
-        <td>$0.87</td>
-        </tr>
-        <tr>
-        <td>Alan</td>
-        <td>Jellybean</td>
-        <td>$3.76</td>
-        </tr>
-        <tr>
-        <td>Jonathan</td>
-        <td>Lollipop</td>
-        <td>$7.00</td>
-        </tr>
-    </tbody>
-</table>
+        <div class="col s6">
+                {% for key, item in valuation.items %}
+                    <h6 class="right-align">{{ item }}</h6>
+                {% endfor %}
+        </div>
+    </div>
+
+    <div class="col s6">
+        <h5 class="left-align">Financial Highlights</h5>
+        <h6 class="right-align">Most recent</h6>
+
+        <div class="col s6">
+            <h6 class="left-align">Profit Margin</h6>
+            <h6 class="left-align">Return on Assets (ttm)</h6>
+            <h6 class="left-align">Return on Equity (ttm)</h6>
+            <h6 class="left-align">Revenue (ttm)</h6>
+            <h6 class="left-align">Net Income Avi to Common (ttm)</h6>
+            <h6 class="left-align">Diluted EPS (ttm)</h6>
+            <h6 class="left-align">Total Cash (mrq)</h6>
+            <h6 class="left-align">Total Debt/Equity (mrq)</h6>
+            <h6 class="left-align">Levered Free Cash Flow (ttm)</h6>
+            
+        </div>
+
+        <div class="col s6">
+                {% for key, item in finance.items %}
+                    <h6 class="right-align">{{ item }}</h6>
+                {% endfor %}
+        </div>
+    </div>
+
+    
+</div>
+
+<div class="fixed-action-btn">
+    <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
+</div>
 
 <script>
 
