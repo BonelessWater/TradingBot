@@ -33,10 +33,40 @@ Research
     </div>
 </div>
 
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Item Name</th>
+            <th>Item Price</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <tr>
+        <td>Alvin</td>
+        <td>Eclair</td>
+        <td>$0.87</td>
+        </tr>
+        <tr>
+        <td>Alan</td>
+        <td>Jellybean</td>
+        <td>$3.76</td>
+        </tr>
+        <tr>
+        <td>Jonathan</td>
+        <td>Lollipop</td>
+        <td>$7.00</td>
+        </tr>
+    </tbody>
+</table>
+
 <script>
 
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
+    var financial_data = '{{ financial_data|escapejs }}'
 
     let ctx = document.getElementById('myChart').getContext('2d');
     
@@ -49,7 +79,7 @@ Research
                 text: title
             },
             datasets: [{
-                label: 'Value',
+                label: title,
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
                 data: chartData.y,
