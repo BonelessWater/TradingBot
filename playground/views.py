@@ -53,32 +53,33 @@ def get_financial_data(symbol):
     return_on_equity = stock.info.get('returnOnEquity')
 
     data = {
-        'Market Cap': market_cap,
-        'Enterprise Value': enterprise_value,
-        'Trailing P/E': trailing_pe,
-        'Forward P/E': forward_pe,
-        'PEG Ratio (5yr expected)': peg_ratio,
-        'Price/Sales (ttm)': price_sales,
-        'Price/Book (mrq)': price_book,
-        'Enterprise Value/Revenue': ev_revenue,
-        'Enterprise Value/EBITDA': ev_ebitda,
-        'Profit Margin': profit_margin,
-        'Return on Assets (ttm)': return_on_assets,
-        'Return on Equity (ttm)': return_on_equity,
-        'Revenue (ttm)': revenue,
-        'Net Income Avi to Common (ttm)': net_income,
-        'Diluted EPS (ttm)': diluted_eps,
-        'Total Cash (mrq)': total_cash,
-        'Total Debt/Equity (mrq)': debt_to_equity,
-        'Levered Free Cash Flow (ttm)': levered_free_cash_flow,
-        'Earnings Per Share': earnings_per_share,
-        'Price to Earnings Ratio': price_to_earnings_ratio,
-        'Dividend Yield': dividend_yield,
-        'Book Value': book_value,
-        'Debt to Equity Ratio': debt_to_equity_ratio,
-        'Revenue Growth': revenue_growth,
-        'Free Cash Flow': free_cash_flow,
-        'Return on Equity': return_on_equity
+        'Ticker': symbol,
+        'MarketCap': market_cap,
+        'EnterpriseValue': enterprise_value,
+        'TrailingPE': trailing_pe,
+        #'Forward P/E': forward_pe,
+        #'PEG Ratio (5yr expected)': peg_ratio,
+        #'Price/Sales (ttm)': price_sales,
+        #'Price/Book (mrq)': price_book,
+        #'Enterprise Value/Revenue': ev_revenue,
+        #'Enterprise Value/EBITDA': ev_ebitda,
+        #'Profit Margin': profit_margin,
+        #'Return on Assets (ttm)': return_on_assets,
+        #'Return on Equity (ttm)': return_on_equity,
+        #'Revenue (ttm)': revenue,
+        #'Net Income Avi to Common (ttm)': net_income,
+        #'Diluted EPS (ttm)': diluted_eps,
+        #'Total Cash (mrq)': total_cash,
+        #'Total Debt/Equity (mrq)': debt_to_equity,
+        #'Levered Free Cash Flow (ttm)': levered_free_cash_flow,
+        #'Earnings Per Share': earnings_per_share,
+        #'Price to Earnings Ratio': price_to_earnings_ratio,
+        #'Dividend Yield': dividend_yield,
+        #'Book Value': book_value,
+        #'Debt to Equity Ratio': debt_to_equity_ratio,
+        #'Revenue Growth': revenue_growth,
+        #'Free Cash Flow': free_cash_flow,
+        #'Return on Equity': return_on_equity
     }
 
     return data
@@ -258,6 +259,7 @@ def research(request):
         selected_ticker = request.POST.get('ticker')
         chart_data = get_stock_data(selected_ticker)
         financial_data = get_financial_data(selected_ticker)
+        print(financial_data)
         return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data})
     return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
     
