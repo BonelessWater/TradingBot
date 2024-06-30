@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-_rh@@i#cvq4snkt%+9+72^ac4#j4jb=xmfzrexxai8%2xkthn5'
 DEBUG = True
 
-ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', '169.254.131.4', 'localhost', '127.0.0.1']
 
 CORS_ALLOWED_ORIGINS = [
     "https://stockportfoliobuilder.azurewebsites.net",
