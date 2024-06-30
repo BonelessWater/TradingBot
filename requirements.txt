@@ -21,3 +21,4 @@ python-decouple==3.8
 mysqlclient==2.2.4
 yfinance==0.2.40
 gunicorn==22.0.0 
+python-dotenv==1.0.1

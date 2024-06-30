@@ -100,9 +100,12 @@ def get_sp500_data():
     # Drop NaN values
     sp500_data['50_MA'].fillna(sp500_data['Close'], inplace=True)
 
+    # Ensure the index is of datetime type
+    sp500_data.index = pd.to_datetime(sp500_data.index)
+
     # Prepare the dictionary
     data_dict = {
-        'x': sp500_data.index.strftime('%Y-%m-%d').tolist(),  # Convert index to string for readability
+        'x': [date.strftime('%Y-%m-%d') for date in sp500_data.index],  # Convert index to string for readability
         'y': sp500_data['Close'].tolist(),  # Use the 'Close' prices for y values
         'avg': sp500_data['50_MA'].tolist()  # Include the 50-day moving average
     }
@@ -223,7 +226,7 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     for symbol in weights:
         financial_data[symbol] = get_financial_data(symbol)
 
-    return json.dumps(data_dict), json.dumps(financial_data)
+    return json.dumps(data_dict), financial_data
 
 def parameters(request):    
     if request.method == 'POST':
@@ -238,7 +241,7 @@ def parameters(request):
             min_var = parameters.cleaned_data['min_var']
             
             chart_data, financial_data = get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var)
-
+            print(financial_data)
             return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})

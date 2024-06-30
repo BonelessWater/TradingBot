@@ -77,7 +77,7 @@ Parameters
         </tr>
     </thead>
     <tbody>
-        {% for item in financial_data %}
+        {% for key, item in financial_data.items %}
         <tr>
             <td>{{ item.Ticker }}</td>
             <td>{{ item.MarketCap }}</td>
@@ -93,14 +93,6 @@ Parameters
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var elems = document.querySelectorAll('.datepicker');
-        var instances = M.Datepicker.init(elems, {
-            format: 'yyyy-mm-dd'
-        });
-    });
-
-
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var chartType = '{{ chart_type|escapejs }}';
 
@@ -153,6 +145,7 @@ Parameters
                 }]
             },
         }
+        var myChart = new Chart(ctx, config);
     } else if (chartType == 'scatter') {
         config = {
             type: 'scatter',
@@ -198,12 +191,13 @@ Parameters
             color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
             pointBackgroundColors.push(color);
         }
+        myChart.update();
     }
 
     
-
+    
     
 
-    myChart.update();
+    
 </script>
 {% endblock content %}

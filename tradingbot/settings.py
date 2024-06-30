@@ -12,14 +12,14 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
-#import environ
-#from decouple import config, Csv
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-_rh@@i#cvq4snkt%+9+72^ac4#j4jb=xmfzrexxai8%2xkthn5'
-DEBUG = True
+load_dotenv(BASE_DIR / '.env')
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', '169.254.131.4', 'localhost', '127.0.0.1']
 
