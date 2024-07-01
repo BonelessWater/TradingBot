@@ -1,1 +1,0 @@
-django_key= 'django-insecure-_rh@@i#cvq4snkt%+9+72^ac4#j4jb=xmfzrexxai8%2xkthn5'
