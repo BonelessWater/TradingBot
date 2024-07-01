@@ -10,7 +10,7 @@ import pandas as pd
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
-from datetime import date
+from datetime import datetime, timedelta, date
 from statistics import NormalDist
 
 def main(request):
@@ -106,15 +106,25 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     return valuation, finance, data
 
 def get_sp500_data():
-    # Define the ticker symbol for S&P 500
+    # Define the ticker symbol for the S&P 500
     ticker_symbol = '^GSPC'
     
     # Calculate the start and end dates
-    end_date = datetime.datetime.now()
-    start_date = end_date - datetime.timedelta(days=3*365)  # roughly 3 years
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=3*365)  # roughly 3 years
     
-    # Fetch the data using yfinance
-    sp500_data = yf.download(ticker_symbol, start=start_date, end=end_date)
+    try:
+        # Fetch the data using yfinance
+        sp500_data = yf.download(ticker_symbol, start=start_date, end=end_date)
+        
+        # Check if the 'Close' column exists
+        if 'Close' in sp500_data.columns:
+            print(sp500_data['Close'])
+        else:
+            print("Data retrieval was successful but 'Close' column is not present.")
+    
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
     sp500_data['50_MA'] = sp500_data['Close'].rolling(window=50).mean()
     
@@ -149,7 +159,7 @@ def get_covariance(tickers_price_df, tickers, calculation_date=None):
     
     # Check if the data already exists for the specific date
     covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=calculation_date).first()
-    
+ 
     if covariance_entry:
         try:
             # Deserialize the matrix
@@ -179,39 +189,24 @@ def get_covariance(tickers_price_df, tickers, calculation_date=None):
 
     return S2
 
-def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var):
+def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var):
     horizon = np.sqrt(horizon)
 
-    date_today = date.today()
-    past_date = timeframe
     z = NormalDist().inv_cdf(confidence_level)
 
-    # Read tickers from the database
-    tickers = StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol')
+    date_today = date.today()
+    past_date = date_today - timedelta(days=3 * 365)
+    
+    # Retrieve distinct and ordered ticker symbols from your Django model
+    #tickers = list(StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol'))
+    #df = yf.download(tickers, past_date, date_today, auto_adjust=True)['Close']
 
-    # Query the database
-    stock_prices = StockData.objects.filter(date__range=[past_date, date_today]).values('symbol', 'date', 'close_price')
+    tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    tickers = tickers.Symbol.to_list()
 
-    # Convert to DataFrame
-    df = pd.DataFrame(list(stock_prices))
+    tickers_price_df = yf.download(tickers, past_date, date_today, auto_adjust=True)['Close']
 
-    # Ensure symbols are in uppercase
-    df['symbol'] = df['symbol'].str.upper()
-
-    # Ensure 'close_price' is of type float
-    df['close_price'] = df['close_price'].astype(float)
-
-    # Pivot the DataFrame to match the format from Yahoo Finance
-    tickers_price_df = df.pivot(index='date', columns='symbol', values='close_price')
-
-    # Ensure we only consider tickers present in both the sources
-    valid_tickers = list(set(tickers) & set(tickers_price_df.columns))
-
-    # Recalculate the returns and covariance matrix
-    tickers_price_df = tickers_price_df[valid_tickers]
-
-    # Ensure there are no missing values that can cause log returns calculation to fail
-    tickers_price_df = tickers_price_df.dropna()
+    
 
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
@@ -231,7 +226,7 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     avg_individual_volatility_df = pd.DataFrame(data=np.mean(tickers_daily_volatility_df, axis=0), columns=['Avg Individual Volatility'])
     var_individual_df = pd.DataFrame((avg_individual_volatility_df['Avg Individual Volatility'].mul(horizon)).sub((tickers_individual_volatility_df['Individual Volatility'].mul(z)).mul(horizon)), columns=['Individual VaR'])
     
-    exp_ret = pd.DataFrame(data=mu2, index=valid_tickers, columns=['Exponential Returns'])
+    exp_ret = pd.DataFrame(data=mu2, index=tickers, columns=['Exponential Returns'])
 
     exp_ret_sort = mu2.sort_values(ascending=False)
     exp_ret_sort.drop(exp_ret_sort.tail(len(exp_ret_sort) - number_of_stocks).index, inplace=True)
@@ -242,11 +237,8 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     
     variance_expon_list = []
 
-    for i in valid_tickers:
-        if i in S2:
-            variance_expon_list.append(S2[i][i])
-        else:
-            print(f"Ticker {i} not found in covariance matrix S2")
+    for i in tickers:
+        variance_expon_list.append(S2[i][i])
     stdev_expon_list = pd.Series(data = np.sqrt(variance_expon_list), index = tickers)
 
 
@@ -314,7 +306,7 @@ def parameters(request):
             confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
             
-            chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var)
+            chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var)
             print(financial_data)
             return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     chart_data = get_sp500_data()
