@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from .forms import ParametersForm, ResearchForm
-from .models import StockData
+from .models import StockData, CovarianceData
 import yfinance as yf
 import datetime
 import json
@@ -53,17 +53,17 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     return_on_equity = stock.info.get('returnOnEquity')
 
     valuation = {
-            'ticker': symbol,
-            'marketcap': market_cap,
-            'enterprisevalue': enterprise_value,
-            'trailingpe': trailing_pe,
-            'forwardpe': forward_pe,
-            'pegratio': peg_ratio,
-            'pricesales': price_sales,
-            'pricebook': price_book,
-            'enterpriserevenue': ev_revenue,
-            'enterpriseebitda': ev_ebitda,
-        }
+        'ticker': symbol,
+        'marketcap': market_cap,
+        'enterprisevalue': enterprise_value,
+        'trailingpe': trailing_pe,
+        'forwardpe': forward_pe,
+        'pegratio': peg_ratio,
+        'pricesales': price_sales,
+        'pricebook': price_book,
+        'enterpriserevenue': ev_revenue,
+        'enterpriseebitda': ev_ebitda,
+    }
     
     finance = {
         'profit margin': profit_margin,
@@ -78,6 +78,16 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     }
     
     data = {
+        'ticker': symbol,
+        'marketcap': market_cap,
+        'enterprisevalue': enterprise_value,
+        'trailingpe': trailing_pe,
+        'forwardpe': forward_pe,
+        'pegratio': peg_ratio,
+        'pricesales': price_sales,
+    }
+
+    other = {
         'earnings per share': earnings_per_share,
         'price to earnings ratio': price_to_earnings_ratio,
         'dividend yield': dividend_yield,
@@ -89,8 +99,8 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     }
 
     if investment_amount != -1:
-        data['Percentage'] = f"{weight*100:.2f}%"
-        data['InvestmentAmount'] = f"{(int(investment_amount) * weight):.3f}"
+        data['percentage'] = f"{weight*100:.2f}%"
+        data['investmentamount'] = f"{(int(investment_amount) * weight):.3f}"
 
     return valuation, finance, data
 
@@ -125,6 +135,29 @@ def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
 
+def get_covariance(tickers_price_df, tickers):
+    # Convert tickers list to a sorted, comma-separated string
+    tickers_str = ','.join(sorted(tickers))
+    
+    # Check if the data already exists
+    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).first()
+    
+    if covariance_entry:
+        # Deserialize the matrix
+        S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix, len(tickers))
+    else:
+        # Calculate the covariance matrix
+        S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+        
+        # Save the result in the database
+        covariance_entry = CovarianceData(
+            tickers=tickers_str,
+            covariance_matrix=S2
+        )
+        covariance_entry.save()
+
+    return S2
+
 def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var):
     horizon = np.sqrt(horizon)
 
@@ -144,7 +177,6 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     # Ensure symbols are in uppercase
     df['symbol'] = df['symbol'].str.upper()
 
-
     # Pivot the DataFrame to match the format from Yahoo Finance
     tickers_price_df = df.pivot(index='date', columns='symbol', values='close_price')
 
@@ -155,7 +187,7 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     tickers_price_df = tickers_price_df[valid_tickers]
 
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
-    S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+    S2 = get_covariance(tickers_price_df, tickers)
     
     mu2.name = None
     mu2 = mu2.fillna(0)
@@ -252,6 +284,7 @@ def parameters(request):
             min_var = parameters.cleaned_data['min_var']
             
             chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confidence_level, min_var)
+            print(financial_data)
             return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})

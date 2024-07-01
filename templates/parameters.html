@@ -75,17 +75,23 @@ Parameters | Portfolio Builder
             <th>Market Cap</th>
             <th>Enterprise Value</th>
             <th>Trailing P/E</th>
+            <th>Forward P/E</th>
+            <th>PEG Ratio</th>
+            <th>Price Sales</th>
         </tr>
     </thead>
     <tbody>
         {% for key, item in financial_data.items %}
         <tr>
-            <td>{{ item.Ticker }}</td>
-            <td>{{ item.Percentage }}</td>
-            <td>{{ item.InvestmentAmount }}</td>
-            <td>{{ item.valuation.MarketCap }}</td>
-            <td>{{ item.valuation.EnterpriseValue }}</td>
-            <td>{{ item.valuation.TrailingPE }}</td>
+            <td>{{ item.ticker }}</td>
+            <td>{{ item.percentage }}</td>
+            <td>{{ item.investmentamount }}</td>
+            <td>{{ item.marketcap }}</td>
+            <td>{{ item.enterprisevalue }}</td>
+            <td>{{ item.trailingpe }}</td>
+            <td>{{ item.forwardpe }}</td>
+            <td>{{ item.pegratio }}</td>
+            <td>{{ item.pricesales }}</td>
         </tr>
         {% endfor %}
     </tbody>
