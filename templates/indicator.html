@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Indicator | Portfolio Builder
+{% endblock title %}
+
+{% block content %}
+
+<div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+        <br><br>
+        <h1 class="header center black-text">Indicator Definitions and General Advice</h1>
+        <ul class="collapsible">
+            <li>
+                <div class="collapsible-header">Simple Moving Average (SMA)</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Simple Moving Average (SMA) is the average of a selected range of prices, usually closing prices, by the number of periods in that range.</p>
+                    <p><strong>Advice:</strong> SMA helps to smooth out price data and identify trends. It's best used in conjunction with other indicators. A rising SMA indicates an uptrend, while a falling SMA indicates a downtrend.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Exponential Moving Average (EMA)</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Exponential Moving Average (EMA) is a type of moving average that gives more weight to recent prices in an attempt to make it more responsive to new information.</p>
+                    <p><strong>Advice:</strong> EMA is useful for identifying trend direction and potential reversals. It's more sensitive to price movements than SMA, which makes it better for short-term trading.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Relative Strength Index (RSI)</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Relative Strength Index (RSI) is a momentum oscillator that measures the speed and change of price movements on a scale of 0 to 100.</p>
+                    <p><strong>Advice:</strong> RSI values above 70 indicate overbought conditions, while values below 30 indicate oversold conditions. Traders use RSI to identify potential buy and sell signals.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">MACD</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Moving Average Convergence Divergence (MACD) is a trend-following momentum indicator that shows the relationship between two moving averages of a security’s price.</p>
+                    <p><strong>Advice:</strong> MACD helps to identify potential buy and sell signals. A bullish signal occurs when the MACD line crosses above the signal line, while a bearish signal occurs when the MACD line crosses below the signal line.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">MACD Signal</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The MACD Signal line is the 9-day EMA of the MACD line and is used to identify changes in the momentum of the stock price.</p>
+                    <p><strong>Advice:</strong> The MACD Signal line helps confirm MACD crossovers. When the MACD crosses above the signal line, it suggests a buy signal, and when it crosses below, it suggests a sell signal.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Bollinger Bands: Middle Band</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Middle Band of Bollinger Bands is typically a 20-day SMA of the closing prices.</p>
+                    <p><strong>Advice:</strong> The Middle Band represents the average price over a period. It can be used to identify the trend direction and potential support or resistance levels.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Bollinger Bands: Upper Band</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Upper Band of Bollinger Bands is calculated by adding twice the standard deviation to the middle band.</p>
+                    <p><strong>Advice:</strong> The Upper Band represents a potential resistance level. When prices move above the upper band, it indicates overbought conditions.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Bollinger Bands: Lower Band</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Lower Band of Bollinger Bands is calculated by subtracting twice the standard deviation from the middle band.</p>
+                    <p><strong>Advice:</strong> The Lower Band represents a potential support level. When prices move below the lower band, it indicates oversold conditions.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Fast Stochastic Indicator (%K)</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Fast Stochastic Indicator (%K) measures the current price relative to the range of prices over a specified period, usually 14 days.</p>
+                    <p><strong>Advice:</strong> %K is useful for identifying overbought and oversold conditions. Values above 80 indicate overbought conditions, while values below 20 indicate oversold conditions.</p>
+                </div>
+            </li>
+            <li>
+                <div class="collapsible-header">Slow Stochastic Indicator (%D)</div>
+                <div class="collapsible-body">
+                    <p><strong>Definition:</strong> The Slow Stochastic Indicator (%D) is the 3-day moving average of the %K value, providing a smoother signal.</p>
+                    <p><strong>Advice:</strong> %D helps to confirm %K signals. When %K crosses above %D, it suggests a buy signal, and when %K crosses below %D, it suggests a sell signal.</p>
+                </div>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      var elems = document.querySelectorAll('.collapsible');
+      var instances = M.Collapsible.init(elems);
+  });
+</script>
+
+
+{% endblock content %}

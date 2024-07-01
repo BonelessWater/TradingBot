@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
-DEBUG = os.getenv('DEBUG')
+DEBUG = os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', '169.254.131.4', 'localhost', '127.0.0.1']
 

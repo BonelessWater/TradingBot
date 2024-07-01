@@ -60,3 +60,13 @@ html, body {
   color: white;
   font-size: 24px;
 }
+.header {
+  font-size: 3rem;
+  margin-bottom: 20px;
+}
+.collapsible-header {
+  font-weight: bold;
+}
+.collapsible-body {
+  padding: 20px;
+}

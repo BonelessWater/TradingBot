@@ -61,7 +61,6 @@ Parameters | Portfolio Builder
 {% block content %}
 
 <div class="col s12">
-    <h4 class="center white-text">{{ title }}</h4>
     <div class="row">
         <canvas id="myChart"></canvas>
     </div>
@@ -128,12 +127,12 @@ Parameters | Portfolio Builder
         config = {
             type: 'line',
             data: {
-                labels: chartData.x,
+                labels: chartData.date,
                 datasets: [{
-                    label: 'S&P 500',
+                    label: 'Close Price',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderColor: 'rgba(255, 99, 132, 1)',
-                    data: chartData.y,
+                    data: chartData['Close Price'],
                     borderWidth: 1,
                     fill: true,
                     pointStyle: false,
@@ -141,13 +140,24 @@ Parameters | Portfolio Builder
                 },
                 {
                     label: '50-Day Moving Average',
-                    data: chartData.avg,
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: chartData['Moving Average'],
+                    borderColor: 'rgba(135, 206, 235, 1)', // Darker Light Blue
                     borderWidth: 1.5,
                     pointRadius: 0,
                     borderDash: [5, 5],
                 }]
-            },
+            }, 
+            options: {
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'S&P 500',
+                        font: {
+                            size: 20
+                        }
+                    }
+                }
+            }
         }
         var myChart = new Chart(ctx, config);
     } else if (chartType == 'scatter') {

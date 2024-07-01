@@ -391,4 +391,6 @@ def research(request):
             return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     print('invalid')
     return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
-    
+
+def indicator(request):
+    return render(request, 'indicator.html')
