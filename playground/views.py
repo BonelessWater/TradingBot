@@ -1,16 +1,17 @@
 from django.shortcuts import render
+from django.http import HttpResponse
+import logging
 from .forms import ParametersForm, ResearchForm
 from .models import StockData, CovarianceData
 import yfinance as yf
-import datetime
-import time
+import time as t
 import json
 import numpy as np
 import pandas as pd
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, time
 from statistics import NormalDist
 
 def main(request):
@@ -146,46 +147,47 @@ def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
 
-def get_covariance(tickers_price_df, tickers, calculation_date=None):
-    if tickers_price_df.empty:
-        raise ValueError("The DataFrame tickers_price_df is empty.")
+def get_covariance():
+    current_time = datetime.now().time()
+    start_time = time(23, 59)  # 11:59 PM
+    end_time = time(0, 30)  # 12:30 AM
 
-    # Use the current date if no specific date is provided
-    if calculation_date is None:
-        calculation_date = date.today()
-
-    # Convert tickers list to a sorted, comma-separated string
+    # Fetch tickers
+    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    tickers = tickers_df.Symbol.to_list()
     tickers_str = ','.join(sorted(tickers))
     
-    # Check if the data already exists for the specific date
-    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=calculation_date).first()
- 
+    today = date.today()
+    
+    # Check if current time is between 11:59 PM and 12:30 AM
+    if current_time >= start_time or current_time <= end_time:
+        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
+
+    # Check if the data already exists for today
+    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
     if covariance_entry:
         try:
-            # Deserialize the matrix
             S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
-            print(f"Deserialized matrix shape: {S2.shape}")
-        except ValueError as e:
-            print(f"Deserialization error: {e}")
-            covariance_entry.delete()
-            covariance_entry = None
+            return S2
+        except AttributeError:
+            # If deserialization fails, fall through to recalculation
+            pass
 
-    if not covariance_entry:
-        # Calculate the covariance matrix
-        S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
-        
-        # Ensure the calculated matrix is not empty before saving
-        if S2.empty:
-            raise ValueError("Calculated covariance matrix is empty.")
-        
-        # Save the result in the database
-        covariance_entry = CovarianceData(
-            tickers=tickers_str,
-            covariance_matrix=S2,
-            calculation_date=calculation_date
-        )
-        covariance_entry.save()
-        print(f"Saved covariance matrix: {covariance_entry.covariance_matrix[:100]}... (truncated)")
+    # If not during the restricted time and no entry was found or deserialization failed
+    csv_file_path = 'tickers_prices.csv'
+    tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+
+    # Calculate covariance matrix
+    S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+    if S2.empty:
+        raise ValueError("Calculated covariance matrix is empty.")
+
+    # Save the new result in the database
+    CovarianceData.objects.update_or_create(
+        tickers=tickers_str,
+        calculation_date=today,
+        defaults={'covariance_matrix': S2}
+    )
 
     return S2
 
@@ -204,15 +206,16 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
     tickers = tickers.Symbol.to_list()
 
-    tickers_price_df = yf.download(tickers, past_date, date_today, auto_adjust=True)['Close']
+    csv_file_path = 'tickers_prices.csv'
 
-    
+    # Read the DataFrame back from the CSV file
+    tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
 
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
-    start = time.time()
-    S2 = get_covariance(tickers_price_df, tickers)
-    end = time.time()    
+    start = t.time()
+    S2 = get_covariance()
+    end = t.time()    
     print(end-start)
 
     mu2.name = None
@@ -307,7 +310,7 @@ def parameters(request):
             min_var = parameters.cleaned_data['min_var']
             
             chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var)
-            print(financial_data)
+
             return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})
