@@ -316,56 +316,48 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
     stock_data = StockData.objects.filter(symbol=ticker).order_by('date').values('date', 'close_price', 'volume')
     df = pd.DataFrame(list(stock_data))
 
+    # Convert Decimal to float for JSON serialization
+    df['close_price'] = df['close_price'].astype(float)
+    df['volume'] = df['volume'].astype(float)
+
     # Ensure the date is in datetime format
     df['date'] = pd.to_datetime(df['date'])
 
-    # Sort by date
-    df = df.sort_values('date')
-
     # Calculate Simple Moving Average (SMA)
     try:
-        if isinstance(sma, int):
-            df['SMA'] = df['close_price'].rolling(window=sma).mean().fillna(df['close_price'])
-        else:
-            df['SMA'] = 0
+        df['SMA'] = df['close_price'].rolling(window=sma if isinstance(sma, int) else 0).mean().fillna(df['close_price'])
     except Exception as e:
         df['SMA'] = 0
         print(f"Error calculating SMA: {e}")
 
     # Calculate Exponential Moving Average (EMA)
     try:
-        if isinstance(ema, int):
-            df['EMA'] = df['close_price'].ewm(span=ema, adjust=False).mean().fillna(df['close_price'])
-        else:
-            df['EMA'] = 0
+        df['EMA'] = df['close_price'].ewm(span=ema if isinstance(ema, int) else 0, adjust=False).mean().fillna(df['close_price'])
     except Exception as e:
         df['EMA'] = 0
         print(f"Error calculating EMA: {e}")
 
     # Calculate Relative Strength Index (RSI)
     try:
-        if isinstance(rsi, int):
-            delta = df['close_price'].diff(1)
-            gain = delta.where(delta > 0, 0)
-            loss = -delta.where(delta < 0, 0)
-            avg_gain = gain.rolling(window=rsi).mean().fillna(0)
-            avg_loss = loss.rolling(window=rsi).mean().fillna(0)
-            rs = avg_gain / avg_loss
-            df['RSI'] = (100 - (100 / (1 + rs))).fillna(0)
-        else:
-            df['RSI'] = 0
+        delta = df['close_price'].diff(1)
+        gain = delta.where(delta > 0, 0)
+        loss = -delta.where(delta < 0, 0)
+        avg_gain = gain.rolling(window=rsi if isinstance(rsi, int) else 0).mean().fillna(0)
+        avg_loss = loss.rolling(window=rsi if isinstance(rsi, int) else 0).mean().fillna(0)
+        rs = avg_gain / avg_loss
+        df['RSI'] = (100 - (100 / (1 + rs))).fillna(0)
     except Exception as e:
         df['RSI'] = 0
-        print(f"Error calculating RSI: {e}")    
+        print(f"Error calculating RSI: {e}")
 
-    # Calculate Moving Average Convergence Divergence (MACD)
+    # Calculate MACD
     try:
-        if macd and all(isinstance(int(number), int) for number in macd.split(',')):
-            macd_values = [int(number) for number in macd.split(',')]
-            ema1 = df['close_price'].ewm(span=macd_values[0], adjust=False).mean()
-            ema2 = df['close_price'].ewm(span=macd_values[1], adjust=False).mean()
-            df['MACD'] = ema1 - ema2
-            df['MACD_Signal'] = df['MACD'].ewm(span=macd_values[2], adjust=False).mean()
+        if isinstance(macd, str) and len(macd.split(',')) == 3 and all(num.isdigit() for num in macd.split(',')):
+            fast, slow, signal = map(int, macd.split(','))
+            fast_ema = df['close_price'].ewm(span=fast, adjust=False).mean()
+            slow_ema = df['close_price'].ewm(span=slow, adjust=False).mean()
+            df['MACD'] = fast_ema - slow_ema
+            df['MACD_Signal'] = df['MACD'].ewm(span=signal, adjust=False).mean()
         else:
             df['MACD'] = 0
             df['MACD_Signal'] = 0
@@ -376,14 +368,10 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     # Calculate Bollinger Bands
     try:
-        if isinstance(bollinger_bands, int):
-            df['Middle_Band'] = df['close_price'].rolling(window=bollinger_bands).mean().fillna(0)
-            df['Upper_Band'] = (df['Middle_Band'] + 2 * df['close_price'].rolling(window=bollinger_bands).std()).fillna(0)
-            df['Lower_Band'] = (df['Middle_Band'] - 2 * df['close_price'].rolling(window=bollinger_bands).std()).fillna(0)
-        else:
-            df['Middle_Band'] = 0
-            df['Upper_Band'] = 0
-            df['Lower_Band'] = 0
+        middle_band = df['close_price'].rolling(window=bollinger_bands if isinstance(bollinger_bands, int) else 0).mean()
+        df['Middle_Band'] = middle_band.fillna(0)
+        df['Upper_Band'] = (middle_band + 2 * df['close_price'].rolling(window=bollinger_bands if isinstance(bollinger_bands, int) else 0).std()).fillna(0)
+        df['Lower_Band'] = (middle_band - 2 * df['close_price'].rolling(window=bollinger_bands if isinstance(bollinger_bands, int) else 0).std()).fillna(0)
     except Exception as e:
         df['Middle_Band'] = 0
         df['Upper_Band'] = 0
@@ -392,12 +380,12 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     # Calculate Stochastic Oscillator
     try:
-        if stochastic_oscillator and all(isinstance(int(number), int) for number in stochastic_oscillator.split(',')):
-            so_values = [int(number) for number in stochastic_oscillator.split(',')]
-            low = df['low'].rolling(window=so_values[0]).min()
-            high = df['high'].rolling(window=so_values[1]).max()
-            df['%K'] = (df['close_price'] - low) / (high - low) * 100
-            df['%D'] = df['%K'].rolling(window=so_values[2]).mean()
+        if isinstance(stochastic_oscillator, str) and len(stochastic_oscillator.split(',')) == 3 and all(num.isdigit() for num in stochastic_oscillator.split(',')):
+            k_period, d_period, smooth = map(int, stochastic_oscillator.split(','))
+            low = df['low'].rolling(window=k_period).min()
+            high = df['high'].rolling(window=d_period).max()
+            df['%K'] = 100 * (df['close_price'] - low) / (high - low)
+            df['%D'] = df['%K'].rolling(window=smooth).mean()
         else:
             df['%K'] = 0
             df['%D'] = 0
@@ -407,21 +395,25 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
         print(f"Error calculating Stochastic Oscillator: {e}")
 
     # Calculate On-Balance Volume (OBV)
-    df['OBV'] = (np.sign(df['close_price'].diff()) * df['volume']).fillna(0).cumsum()
+    try:
+        df['OBV'] = (np.sign(df['close_price'].diff()) * df['volume']).fillna(0).cumsum()
+    except Exception as e:
+        df['OBV'] = 0
+        print(f"Error calculating OBV: {e}")
 
     data = {
         'date': df['date'].dt.strftime('%Y-%m-%d').tolist(),
         'Close Price': df['close_price'].tolist(),
-        'Simple Moving Average': df['SMA'].tolist(),
-        'Exponential Moving Average': df['EMA'].tolist(),
-        'Relative Strength Index': df['RSI'].tolist(),
-        'MACD': df['MACD'].tolist(),
-        'MACD Signal': df['MACD_Signal'].tolist(),
-        'Middle Band': df['Middle_Band'].tolist(),
-        'Upper Band': df['Upper_Band'].tolist(),
-        'Lower Band': df['Lower_Band'].tolist(),
-        'Fast Stochastic Indicator': df['%K'].tolist(),
-        'Slow Stochastic Indicator': df['%D'].tolist(),
+        'Simple Moving Average': [float(x) for x in df['SMA'].tolist()],
+        'Exponential Moving Average': [float(x) for x in df['EMA'].tolist()],
+        'Relative Strength Index': [float(x) for x in df['RSI'].tolist()],
+        'MACD': [float(x) for x in df['MACD'].tolist()],
+        'MACD Signal': [float(x) for x in df['MACD_Signal'].tolist()],
+        'Middle Band': [float(x) for x in df['Middle_Band'].tolist()],
+        'Upper Band': [float(x) for x in df['Upper_Band'].tolist()],
+        'Lower Band': [float(x) for x in df['Lower_Band'].tolist()],
+        'Fast Stochastic Indicator': [float(x) for x in df['%K'].tolist()],
+        'Slow Stochastic Indicator': [float(x) for x in df['%D'].tolist()],
     }
 
     return json.dumps(data)
