@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import logging
 from .forms import ParametersForm, ResearchForm
-from .models import StockData, CovarianceData
+from .models import CovarianceData
 import yfinance as yf
 import time as t
 import json
@@ -302,7 +302,6 @@ def parameters(request):
         if parameters.is_valid():
             investment_amount = parameters.cleaned_data['amount']
             number_of_stocks = parameters.cleaned_data['amount_stocks']
-            timeframe = parameters.cleaned_data['time_frame']
             horizon = parameters.cleaned_data['horizon']
             confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
@@ -314,15 +313,13 @@ def parameters(request):
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})
 
 def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator):
-    stock_data = StockData.objects.filter(symbol=ticker).order_by('date').values('date', 'close_price', 'volume')
-    df = pd.DataFrame(list(stock_data))
+    df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
 
-    # Convert Decimal to float for JSON serialization
-    df['close_price'] = df['close_price'].astype(float)
-    df['volume'] = df['volume'].astype(float)
-
-    # Ensure the date is in datetime format
-    df['date'] = pd.to_datetime(df['date'])
+    # Rename the ticker column to 'close_price' for clarity
+    df.rename(columns={ticker: 'close_price'}, inplace=True)
+    
+    # Drop the last day because it is sometimes NaN
+    df = df[:-1]
 
     # Calculate Simple Moving Average (SMA)
     try:
@@ -395,15 +392,8 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
         df['%D'] = 0
         print(f"Error calculating Stochastic Oscillator: {e}")
 
-    # Calculate On-Balance Volume (OBV)
-    try:
-        df['OBV'] = (np.sign(df['close_price'].diff()) * df['volume']).fillna(0).cumsum()
-    except Exception as e:
-        df['OBV'] = 0
-        print(f"Error calculating OBV: {e}")
-
     data = {
-        'date': df['date'].dt.strftime('%Y-%m-%d').tolist(),
+        'date': df['Date'].dt.strftime('%Y-%m-%d').tolist(),
         'Close Price': df['close_price'].tolist(),
         'Simple Moving Average': [float(x) for x in df['SMA'].tolist()],
         'Exponential Moving Average': [float(x) for x in df['EMA'].tolist()],
@@ -416,12 +406,14 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
         'Fast Stochastic Indicator': [float(x) for x in df['%K'].tolist()],
         'Slow Stochastic Indicator': [float(x) for x in df['%D'].tolist()],
     }
+    print(data)
 
     return json.dumps(data)
 
 def research(request):
     
-    tickers = StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol')
+    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    tickers = tickers_df.Symbol.to_list()
     if request.method == 'POST':
         
         research_form = ResearchForm(request.POST)

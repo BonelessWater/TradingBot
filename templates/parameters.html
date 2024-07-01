@@ -25,13 +25,6 @@ Parameters | Portfolio Builder
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Time Frame (DD/MM/YYYY)" id="time_frame" type="date" class="validate black-text" name="time_frame" value="{{ form.time_frame.value|default_if_none:'' }}">
-                <label for="time_frame" class="black-text">{{ form.time_frame.label }}</label>
-                {% if form.time_frame.errors %}
-                <div class="black-text">{{ form.time_frame.errors }}</div>
-                {% endif %}
-            </div>
-            <div class="input-field col s12">
                 <input placeholder="Investment Horizon (months)" id="horizon" type="text" class="validate black-text" name="horizon" value="{{ form.horizon.value|default_if_none:'' }}">
                 <label for="horizon" class="black-text">{{ form.horizon.label }}</label>
                 {% if form.horizon.errors %}
