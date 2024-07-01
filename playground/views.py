@@ -107,30 +107,28 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     return valuation, finance, data
 
 def get_sp500_data():
+    from datetime import datetime, timedelta
+    import yfinance as yf
+    import pandas as pd
+    import json
+
     # Define the ticker symbol for the S&P 500
     ticker_symbol = '^GSPC'
     
     # Calculate the start and end dates
     end_date = datetime.now()
-    start_date = end_date - timedelta(days=3*365)  # roughly 3 years
+    start_date = end_date - timedelta(days=3 * 365)  # roughly 3 years
     
     try:
         # Fetch the data using yfinance
         sp500_data = yf.download(ticker_symbol, start=start_date, end=end_date)
         
-        # Check if the 'Close' column exists
-        if 'Close' in sp500_data.columns:
-            print(sp500_data['Close'])
-        else:
-            print("Data retrieval was successful but 'Close' column is not present.")
-    
     except Exception as e:
         print(f"An error occurred: {e}")
     
+    # Calculate the moving average and handle NaN values
     sp500_data['50_MA'] = sp500_data['Close'].rolling(window=50).mean()
-    
-    # Drop NaN values
-    sp500_data['50_MA'].fillna(sp500_data['Close'], inplace=True)
+    sp500_data['50_MA'] = sp500_data['50_MA'].fillna(sp500_data['Close'])
 
     # Ensure the index is of datetime type
     sp500_data.index = pd.to_datetime(sp500_data.index)
@@ -440,7 +438,9 @@ def research(request):
 
             valuation, finance, financial_data = get_financial_data(selected_ticker)
             return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
-    print('invalid')
+        else:
+            print(research_form.errors) 
+
     return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
 
 def indicator(request):
