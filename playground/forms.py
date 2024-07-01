@@ -8,3 +8,11 @@ class ParametersForm(forms.Form):
     confidence = forms.DecimalField(label='VaR confidence level')
     min_var = forms.DecimalField(label='Min VaR')
 
+class ResearchForm(forms.Form):
+    ticker = forms.CharField()
+    SMA = forms.IntegerField(required=False)
+    EMA = forms.IntegerField(required=False)
+    BollingerBands = forms.BooleanField(required=False)
+    RSI = forms.BooleanField(required=False)
+    MACD = forms.BooleanField(required=False)
+    StochasticOscillator = forms.BooleanField(required=False)
