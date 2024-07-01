@@ -115,7 +115,7 @@ def get_sp500_data():
 
     # Prepare the dictionary
     data_dict = {
-        'x': [date.strftime('%Y-%m-%d') for date in sp500_data.index],
+        'date': [date.strftime('%Y-%m-%d') for date in sp500_data.index],
         'Close Price': sp500_data['Close'].tolist(), 
         'Moving Average': sp500_data['50_MA'].tolist() 
     }
@@ -292,15 +292,15 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
             delta = df['close_price'].diff(1)
             gain = delta.where(delta > 0, 0)
             loss = -delta.where(delta < 0, 0)
-            avg_gain = gain.rolling(window=rsi).mean()
-            avg_loss = loss.rolling(window=rsi).mean()
+            avg_gain = gain.rolling(window=rsi).mean().fillna(0)
+            avg_loss = loss.rolling(window=rsi).mean().fillna(0)
             rs = avg_gain / avg_loss
-            df['RSI'] = 100 - (100 / (1 + rs))
+            df['RSI'] = (100 - (100 / (1 + rs))).fillna(0)
         else:
             df['RSI'] = 0
     except Exception as e:
         df['RSI'] = 0
-        print(f"Error calculating RSI: {e}")
+        print(f"Error calculating RSI: {e}")    
 
     # Calculate Moving Average Convergence Divergence (MACD)
     try:
@@ -321,9 +321,9 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
     # Calculate Bollinger Bands
     try:
         if isinstance(bollinger_bands, int):
-            df['Middle_Band'] = df['close_price'].rolling(window=bollinger_bands).mean()
-            df['Upper_Band'] = df['Middle_Band'] + 2 * df['close_price'].rolling(window=bollinger_bands).std()
-            df['Lower_Band'] = df['Middle_Band'] - 2 * df['close_price'].rolling(window=bollinger_bands).std()
+            df['Middle_Band'] = df['close_price'].rolling(window=bollinger_bands).mean().fillna(0)
+            df['Upper_Band'] = (df['Middle_Band'] + 2 * df['close_price'].rolling(window=bollinger_bands).std()).fillna(0)
+            df['Lower_Band'] = (df['Middle_Band'] - 2 * df['close_price'].rolling(window=bollinger_bands).std()).fillna(0)
         else:
             df['Middle_Band'] = 0
             df['Upper_Band'] = 0
@@ -355,18 +355,17 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     data = {
         'date': df['date'].dt.strftime('%Y-%m-%d').tolist(),
-        'close_price': df['close_price'].tolist(),
-        'SMA': df['SMA'].tolist(),
-        'EMA': df['EMA'].tolist(),
-        'RSI': df['RSI'].tolist(),
+        'Close Price': df['close_price'].tolist(),
+        'Simple Moving Average': df['SMA'].tolist(),
+        'Exponential Moving Average': df['EMA'].tolist(),
+        'Relative Strength Index': df['RSI'].tolist(),
         'MACD': df['MACD'].tolist(),
-        'MACD_Signal': df['MACD_Signal'].tolist(),
-        'Middle_Band': df['Middle_Band'].tolist(),
-        'Upper_Band': df['Upper_Band'].tolist(),
-        'Lower_Band': df['Lower_Band'].tolist(),
-        '%K': df['%K'].tolist(),
-        '%D': df['%D'].tolist(),
-        'OBV': df['OBV'].tolist(),
+        'MACD Signal': df['MACD_Signal'].tolist(),
+        'Middle Band': df['Middle_Band'].tolist(),
+        'Upper Band': df['Upper_Band'].tolist(),
+        'Lower Band': df['Lower_Band'].tolist(),
+        'Fast Stochastic Indicator': df['%K'].tolist(),
+        'Slow Stochastic Indicator': df['%D'].tolist(),
     }
 
     return json.dumps(data)
@@ -376,19 +375,20 @@ def research(request):
     tickers = StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol')
     if request.method == 'POST':
         
-        research = ResearchForm(request.POST)
-        if research.is_valid():
-            selected_ticker = research.cleaned_data['ticker']
-            sma = research.cleaned_data['SMA']
-            ema = research.cleaned_data['EMA']
-            bollinger_bands = research.cleaned_data['BollingerBands']
-            rsi = research.cleaned_data['RSI']
-            macd = research.cleaned_data['MACD']
-            stochastic_oscillator = research.cleaned_data['StochasticOscillator']
+        research_form = ResearchForm(request.POST)
+        if research_form.is_valid():
+            selected_ticker = research_form.cleaned_data['ticker']
+            sma_value = research_form.cleaned_data.get('SMAValue')
+            ema_value = research_form.cleaned_data.get('EMAValue')
+            bollinger_bands_value = research_form.cleaned_data.get('BollingerBandsValue')
+            rsi_value = research_form.cleaned_data.get('RSIValue')
+            macd_value = research_form.cleaned_data.get('MACDValue')
+            stochastic_value = research_form.cleaned_data.get('StochasticValue')
 
-            chart_data = get_stock_data(selected_ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator)
+            chart_data = get_stock_data(selected_ticker, sma_value, ema_value, rsi_value, bollinger_bands_value, macd_value, stochastic_value)
 
             valuation, finance, financial_data = get_financial_data(selected_ticker)
             return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
+    print('invalid')
     return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
     

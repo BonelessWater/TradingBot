@@ -8,116 +8,116 @@ Research
 <div class="sidebar white" id="sidebar">
     <h4 class="center black-text" style="margin-top: 20px; font-weight: bold; font-size: 24px;">Stock lookup</h4>
     <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="input-field col s12">
-                <select name="ticker">
-                    <option value="" disabled selected>Choose your Ticker</option>
-                    {% for ticker in tickers %}
-                    <option value="{{ ticker }}">{{ ticker }}</option>
-                    {% endfor %}
-                </select>
-                <label>Stock Ticker</label>
-            </div>
-
-            <h6 class="left-align">Optional Indicators</h6>
-
-            <p>
-                <label>
-                    <input type="checkbox" id="SMACheckBox" name="SMA" class="filled-in" />
-                    <span>Simple Moving Average</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="SMADropDown" style="display:none;">
-                <select name="SMAValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="20">20 day</option>
-                    <option value="50">50 day</option>
-                    <option value="200">200 day</option>
-                </select>
-                <label>Simple Moving Average Value</label>
-            </div>
-
-            <p>
-                <label>
-                    <input type="checkbox" id="EMACheckBox" name="EMA" class="filled-in" />
-                    <span>Exponential Moving Average</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="EMADropDown" style="display:none;">
-                <select name="EMAValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="20">20 day</option>
-                    <option value="50">50 day</option>
-                    <option value="200">200 day</option>
-                </select>
-                <label>Exponential Moving Average Value</label>
-            </div>
-            
-            <p>
-                <label>
-                    <input type="checkbox" id="BollingerBandsCheckbox" name="BollingerBands" class="filled-in" />
-                    <span>Bollinger Bands</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="BollingerBandsDropdown" style="display:none;">
-                <select name="BollingerBandsValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="20">20 day</option>
-                    <option value="50">50 day</option>
-                    <option value="200">200 day</option>
-                </select>
-                <label>Bollinger Bands Value</label>
-            </div>
-
-            <p>
-                <label>
-                    <input type="checkbox" id="RSICheckbox" name="RSI" class="filled-in" />
-                    <span>Relative Strength Index (RSI)</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="RSIDropdown" style="display:none;">
-                <select name="RSIValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="14">14 day</option>
-                    <option value="28">28 day</option>
-                </select>
-                <label>RSI Value</label>
-            </div>
-
-            <p>
-                <label>
-                    <input type="checkbox" id="MACDCheckbox" name="MACD" class="filled-in" />
-                    <span>MACD</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="MACDDropdown" style="display:none;">
-                <select name="MACDValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="12,26,9">Standard (12,26,9)</option>
-                    <option value="8,17,9">Custom (8,17,9)</option>
-                </select>
-                <label>MACD Value</label>
-            </div>
-
-            <p>
-                <label>
-                    <input type="checkbox" id="StochasticCheckbox" name="StochasticOscillator" class="filled-in" />
-                    <span>Stochastic Oscillator</span>
-                </label>
-            </p>
-            <div class="input-field col s12" id="StochasticDropdown" style="display:none;">
-                <select name="StochasticValue">
-                    <option value="" disabled selected>Choose a value</option>
-                    <option value="14,3,3">Standard (14,3,3)</option>
-                    <option value="5,3,3">Custom (5,3,3)</option>
-                </select>
-                <label>Stochastic Oscillator Value</label>
-            </div>
-
-            <button class="btn waves-effect waves-light bottom" type="submit" name="action">Submit</button>
+    {% csrf_token %}
+    <div class="row">
+        <div class="input-field col s12">
+            <select name="ticker" required>
+                <option value="" disabled selected>Choose your Ticker</option>
+                {% for ticker in tickers %}
+                <option value="{{ ticker }}">{{ ticker }}</option>
+                {% endfor %}
+            </select>
+            <label>Stock Ticker</label>
         </div>
-    </form>
+
+        <h6 class="left-align">Optional Indicators</h6>
+
+        <p>
+            <label>
+                <input type="checkbox" id="SMACheckBox" name="SMA" class="filled-in" />
+                <span>Simple Moving Average</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="SMADropDown" style="display:none;">
+            <select name="SMAValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="20">20 day</option>
+                <option value="50">50 day</option>
+                <option value="200">200 day</option>
+            </select>
+            <label>Simple Moving Average Value</label>
+        </div>
+
+        <p>
+            <label>
+                <input type="checkbox" id="EMACheckBox" name="EMA" class="filled-in" />
+                <span>Exponential Moving Average</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="EMADropDown" style="display:none;">
+            <select name="EMAValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="20">20 day</option>
+                <option value="50">50 day</option>
+                <option value="200">200 day</option>
+            </select>
+            <label>Exponential Moving Average Value</label>
+        </div>
+        
+        <p>
+            <label>
+                <input type="checkbox" id="BollingerBandsCheckbox" name="BollingerBands" class="filled-in" />
+                <span>Bollinger Bands</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="BollingerBandsDropdown" style="display:none;">
+            <select name="BollingerBandsValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="20">20 day</option>
+                <option value="50">50 day</option>
+                <option value="200">200 day</option>
+            </select>
+            <label>Bollinger Bands Value</label>
+        </div>
+
+        <p>
+            <label>
+                <input type="checkbox" id="RSICheckbox" name="RSI" class="filled-in" />
+                <span>Relative Strength Index (RSI)</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="RSIDropdown" style="display:none;">
+            <select name="RSIValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="14">14 day</option>
+                <option value="28">28 day</option>
+            </select>
+            <label>RSI Value</label>
+        </div>
+
+        <p>
+            <label>
+                <input type="checkbox" id="MACDCheckbox" name="MACD" class="filled-in" />
+                <span>MACD</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="MACDDropdown" style="display:none;">
+            <select name="MACDValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="12,26,9">Standard (12,26,9)</option>
+                <option value="8,17,9">Custom (8,17,9)</option>
+            </select>
+            <label>MACD Value</label>
+        </div>
+
+        <p>
+            <label>
+                <input type="checkbox" id="StochasticCheckbox" name="StochasticOscillator" class="filled-in" />
+                <span>Stochastic Oscillator</span>
+            </label>
+        </p>
+        <div class="input-field col s12" id="StochasticDropdown" style="display:none;">
+            <select name="StochasticValue">
+                <option value="" disabled selected>Choose a value</option>
+                <option value="14,3,3">Standard (14,3,3)</option>
+                <option value="5,3,3">Custom (5,3,3)</option>
+            </select>
+            <label>Stochastic Oscillator Value</label>
+        </div>
+
+        <button class="btn waves-effect waves-light bottom" type="submit" name="action">Submit</button>
+    </div>
+</form>
 </div>
 {% endblock sidebar %}
 
@@ -187,29 +187,35 @@ Research
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-            var elems = document.querySelectorAll('select');
-            var instances = M.FormSelect.init(elems);
+    var elems = document.querySelectorAll('select');
+    M.FormSelect.init(elems);
 
-            // JavaScript to show/hide dropdown based on checkbox state
-            function toggleDropdown(checkboxId, dropdownId) {
-                document.getElementById(checkboxId).addEventListener('change', function() {
-                    var dropdown = document.getElementById(dropdownId);
-                    if (this.checked) {
-                        dropdown.style.display = 'block';
-                        M.FormSelect.init(dropdown.querySelectorAll('select'));  // Re-initialize the select
-                    } else {
-                        dropdown.style.display = 'none';
-                    }
-                });
+    function toggleDropdown(checkboxId, dropdownId) {
+        document.getElementById(checkboxId).addEventListener('change', function() {
+            var dropdown = document.getElementById(dropdownId);
+            if (this.checked) {
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
             }
-
-            toggleDropdown('SMACheckBox', 'SMADropDown');
-            toggleDropdown('EMACheckBox', 'EMADropDown');
-            toggleDropdown('BollingerBandsCheckbox', 'BollingerBandsDropdown');
-            toggleDropdown('RSICheckbox', 'RSIDropdown');
-            toggleDropdown('MACDCheckbox', 'MACDDropdown');
-            toggleDropdown('StochasticCheckbox', 'StochasticDropdown');
         });
+    }
+
+    toggleDropdown('SMACheckBox', 'SMADropDown');
+    toggleDropdown('EMACheckBox', 'EMADropDown');
+    toggleDropdown('BollingerBandsCheckbox', 'BollingerBandsDropdown');
+    toggleDropdown('RSICheckbox', 'RSIDropdown');
+    toggleDropdown('MACDCheckbox', 'MACDDropdown');
+    toggleDropdown('StochasticCheckbox', 'StochasticDropdown');
+
+    // Trigger change event for pre-selected checkboxes
+    document.getElementById('SMACheckBox').dispatchEvent(new Event('change'));
+    document.getElementById('EMACheckBox').dispatchEvent(new Event('change'));
+    document.getElementById('BollingerBandsCheckbox').dispatchEvent(new Event('change'));
+    document.getElementById('RSICheckbox').dispatchEvent(new Event('change'));
+    document.getElementById('MACDCheckbox').dispatchEvent(new Event('change'));
+    document.getElementById('StochasticCheckbox').dispatchEvent(new Event('change'));
+});
 
     
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
@@ -218,18 +224,17 @@ Research
 
     // Define a color mapping for each dataset
     const colorMapping = {
-            'close_price': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink
-            'SMA': 'rgba(144, 238, 144, 1)', // Light Green
-            'EMA': 'rgba(173, 216, 230, 1)', // Light Blue
-            'RSI': 'rgba(255, 182, 193, 1)', // Light Pink
+            'Close Price': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink
+            'Simple Moving Average': 'rgba(144, 238, 144, 1)', // Light Green
+            'Exponential Moving Average': 'rgba(173, 216, 230, 1)', // Light Blue
+            'Relative Strength Index': 'rgba(255, 182, 193, 1)', // Light Pink
             'MACD': 'rgba(255, 160, 122, 1)', // Light Salmon
-            'MACD_Signal': 'rgba(238, 130, 238, 1)', // Violet
-            'Middle_Band': 'rgba(211, 211, 211, 1)', // Light Gray
-            'Upper_Band': 'rgba(192, 192, 192, 1)', // Silver
-            'Lower_Band': 'rgba(224, 255, 255, 1)', // Light Cyan
-            '%K': 'rgba(32, 178, 170, 1)', // Light Sea Green
-            '%D': 'rgba(221, 160, 221, 1)', // Light Purple
-            'OBV': 'rgba(100, 149, 237, 1)' // Cornflower Blue
+            'MACD Signal': 'rgba(238, 130, 238, 1)', // Violet
+            'Middle Band': 'rgba(211, 211, 211, 1)', // Light Gray
+            'Upper Band': 'rgba(192, 192, 192, 1)', // Silver
+            'Lower Band': 'rgba(135, 206, 235, 1)', // Light Cyan
+            'Fast Stochastic Indicator': 'rgba(32, 178, 170, 1)', // Light Sea Green
+            'Slow Stochastic Indicator': 'rgba(221, 160, 221, 1)', // Light Purple
         };
 
     // Convert date strings to timestamps

@@ -10,9 +10,15 @@ class ParametersForm(forms.Form):
 
 class ResearchForm(forms.Form):
     ticker = forms.CharField()
-    SMA = forms.IntegerField(required=False)
-    EMA = forms.IntegerField(required=False)
+    SMA = forms.BooleanField(required=False)
+    SMAValue = forms.IntegerField(required=False)
+    EMA = forms.BooleanField(required=False)
+    EMAValue = forms.IntegerField(required=False)
     BollingerBands = forms.BooleanField(required=False)
+    BollingerBandsValue = forms.IntegerField(required=False)
     RSI = forms.BooleanField(required=False)
+    RSIValue = forms.IntegerField(required=False)
     MACD = forms.BooleanField(required=False)
+    MACDValue = forms.CharField(required=False)
     StochasticOscillator = forms.BooleanField(required=False)
+    StochasticValue = forms.CharField(required=False)
