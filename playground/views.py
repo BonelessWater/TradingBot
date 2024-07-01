@@ -3,6 +3,7 @@ from .forms import ParametersForm, ResearchForm
 from .models import StockData, CovarianceData
 import yfinance as yf
 import datetime
+import time
 import json
 import numpy as np
 import pandas as pd
@@ -135,26 +136,46 @@ def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
 
-def get_covariance(tickers_price_df, tickers):
+def get_covariance(tickers_price_df, tickers, calculation_date=None):
+    if tickers_price_df.empty:
+        raise ValueError("The DataFrame tickers_price_df is empty.")
+
+    # Use the current date if no specific date is provided
+    if calculation_date is None:
+        calculation_date = date.today()
+
     # Convert tickers list to a sorted, comma-separated string
     tickers_str = ','.join(sorted(tickers))
     
-    # Check if the data already exists
-    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).first()
+    # Check if the data already exists for the specific date
+    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=calculation_date).first()
     
     if covariance_entry:
-        # Deserialize the matrix
-        S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix, len(tickers))
-    else:
+        try:
+            # Deserialize the matrix
+            S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
+            print(f"Deserialized matrix shape: {S2.shape}")
+        except ValueError as e:
+            print(f"Deserialization error: {e}")
+            covariance_entry.delete()
+            covariance_entry = None
+
+    if not covariance_entry:
         # Calculate the covariance matrix
         S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+        
+        # Ensure the calculated matrix is not empty before saving
+        if S2.empty:
+            raise ValueError("Calculated covariance matrix is empty.")
         
         # Save the result in the database
         covariance_entry = CovarianceData(
             tickers=tickers_str,
-            covariance_matrix=S2
+            covariance_matrix=S2,
+            calculation_date=calculation_date
         )
         covariance_entry.save()
+        print(f"Saved covariance matrix: {covariance_entry.covariance_matrix[:100]}... (truncated)")
 
     return S2
 
@@ -165,7 +186,7 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     past_date = timeframe
     z = NormalDist().inv_cdf(confidence_level)
 
-    # Read tickers from Wikipedia
+    # Read tickers from the database
     tickers = StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol')
 
     # Query the database
@@ -177,6 +198,9 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     # Ensure symbols are in uppercase
     df['symbol'] = df['symbol'].str.upper()
 
+    # Ensure 'close_price' is of type float
+    df['close_price'] = df['close_price'].astype(float)
+
     # Pivot the DataFrame to match the format from Yahoo Finance
     tickers_price_df = df.pivot(index='date', columns='symbol', values='close_price')
 
@@ -186,9 +210,16 @@ def get_portfolio(investment_amount, number_of_stocks, timeframe, horizon, confi
     # Recalculate the returns and covariance matrix
     tickers_price_df = tickers_price_df[valid_tickers]
 
+    # Ensure there are no missing values that can cause log returns calculation to fail
+    tickers_price_df = tickers_price_df.dropna()
+
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+
+    start = time.time()
     S2 = get_covariance(tickers_price_df, tickers)
-    
+    end = time.time()    
+    print(end-start)
+
     mu2.name = None
     mu2 = mu2.fillna(0)
 
