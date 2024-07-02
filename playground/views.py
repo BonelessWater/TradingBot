@@ -184,8 +184,8 @@ def get_covariance():
     today = date.today()
 
     # Check if current time is between 12:00 AM and 12:30 AM
-    # if current_time >= start_time and current_time <= end_time:
-    #    return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
+    if current_time >= start_time and current_time <= end_time:
+        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
 
     # Check if the data already exists for today
     covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
