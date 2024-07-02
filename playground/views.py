@@ -273,13 +273,13 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     ef_sharpe_plot = EfficientFrontier(mu2[tickers_sharpe], sharpe_cov)
 
     # Generate random portfolios
-    n_samples = 1000
+    start = t.time()
+    n_samples = 5000
     w = np.random.dirichlet(np.ones(ef_sharpe_plot.n_assets), n_samples)
     rets = w.dot(ef_sharpe_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_sharpe_plot.cov_matrix @ w.T))
     sharpes = rets / stds
-    
-  
+    print(t.time() -start)
     # Prepare the dictionary
     data_dict = {
         'x': stds.tolist(), 
@@ -287,12 +287,10 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
         'sharpe': sharpes.tolist() 
     }
 
-
     financial_data = {}
     for symbol in weights:
         valuation, finance, financial_data[symbol] = get_financial_data(symbol, investment_amount, weights[symbol])
     
-
     return json.dumps(data_dict), valuation, finance, financial_data
 
 def parameters(request):    
@@ -406,7 +404,6 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
         'Fast Stochastic Indicator': [float(x) for x in df['%K'].tolist()],
         'Slow Stochastic Indicator': [float(x) for x in df['%D'].tolist()],
     }
-    print(data)
 
     return json.dumps(data)
 

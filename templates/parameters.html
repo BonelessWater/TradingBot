@@ -56,9 +56,13 @@ Parameters | Portfolio Builder
 <div class="col s12">
     <div class="row">
         <canvas id="myChart"></canvas>
+        <h6>Sharpe Ratio:</h6>
+        <div id="colorScaleBar" class="color-scale-bar"></div>
     </div>
 </div>
-
+<div>
+    <h5 class="center">Best Portfolio</h5>
+</div>
 <table>
     <thead>
         <tr>
@@ -170,7 +174,7 @@ Parameters | Portfolio Builder
                     pointStyle: 'circle',
                     pointRadius: 2.5,
                 }]
-            },
+            }, 
             options: {
                 scales: {
                     x: {
@@ -189,6 +193,13 @@ Parameters | Portfolio Builder
                         }
                     }
                 }, plugins: {
+                    title: {
+                        display: true,
+                        text: 'Efficient Frontier',
+                        font: {
+                            size: 20
+                        }
+                    },
                     legend: {
                         display: false,
                     }
@@ -205,11 +216,28 @@ Parameters | Portfolio Builder
             pointBackgroundColors.push(color);
         }
         myChart.update();
+
+        // Create the color scale bar
+        const colorScaleBar = document.getElementById('colorScaleBar');
+        const numColors = 20; // Number of steps in the color scale
+        for (let i = 0; i <= numColors; i++) {
+            const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
+            const color = interpolateColor(value, minSharpe, maxSharpe);
+            const div = document.createElement('div');
+            div.style.backgroundColor = color;
+            colorScaleBar.appendChild(div);
+        }
+
+        // Add min and max Sharpe values
+        const minLabel = document.createElement('span');
+        minLabel.textContent = `Min: ${minSharpe.toFixed(2)}`;
+        colorScaleBar.appendChild(minLabel);
+
+        const maxLabel = document.createElement('span');
+        maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
+        colorScaleBar.appendChild(maxLabel);
     }
 
-    
-    
-    
 
     
 </script>

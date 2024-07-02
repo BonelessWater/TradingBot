@@ -70,3 +70,15 @@ html, body {
 .collapsible-body {
   padding: 20px;
 }
+.color-scale-bar {
+  display: flex;
+  align-items: center;
+  margin: 20px;
+}
+.color-scale-bar div {
+  width: 20px;
+  height: 20px;
+}
+.color-scale-bar span {
+  margin-left: 10px;
+}
