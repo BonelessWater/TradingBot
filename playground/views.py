@@ -147,7 +147,7 @@ def g_mean(x):
 
 def get_covariance():
     current_time = datetime.now().time()
-    start_time = time(23, 59)  # 11:59 PM
+    start_time = time(0, 0)  # 12:00 AM
     end_time = time(0, 30)  # 12:30 AM
 
     # Fetch tickers
@@ -175,10 +175,7 @@ def get_covariance():
     csv_file_path = 'tickers_prices.csv'
     tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
 
-    # Debugging: Print DataFrame info
-    print("Tickers Price DataFrame Info:")
-    print(tickers_price_df.info())
-
+    print(tickers_price_df)
     # Ensure DataFrame is not empty
     if tickers_price_df.empty:
         raise ValueError("Tickers price DataFrame is empty.")

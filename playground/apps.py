@@ -17,7 +17,7 @@ class PlaygroundConfig(AppConfig):
         scheduler = BackgroundScheduler()
         scheduler.add_job(
             task_function,
-            trigger=CronTrigger(hour=23, minute=59),  # Run daily at 11:59 PM
+            trigger=CronTrigger(hour=0, minute=0),  # Run daily at 12:00 M
             id='daily_data_save',
             replace_existing=True,
             max_instances=1
