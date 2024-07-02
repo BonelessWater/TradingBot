@@ -175,10 +175,25 @@ def get_covariance():
     csv_file_path = 'tickers_prices.csv'
     tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
 
+    # Debugging: Print DataFrame info
+    print("Tickers Price DataFrame Info:")
+    print(tickers_price_df.info())
+
+    # Ensure DataFrame is not empty
+    if tickers_price_df.empty:
+        raise ValueError("Tickers price DataFrame is empty.")
+
+    # Ensure there are no missing values
+    if tickers_price_df.isnull().values.any():
+        raise ValueError("Tickers price DataFrame contains missing values.")
+
     # Calculate covariance matrix
-    S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
-    if S2.empty:
-        raise ValueError("Calculated covariance matrix is empty.")
+    try:
+        S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+        if S2.empty:
+            raise ValueError("Calculated covariance matrix is empty.")
+    except Exception as e:
+        raise ValueError(f"Error calculating covariance matrix: {e}")
 
     # Save the new result in the database
     CovarianceData.objects.update_or_create(
