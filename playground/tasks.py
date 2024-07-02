@@ -36,7 +36,13 @@ def save_data():
 
     # Fetch tickers
     tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    tickers = tickers_df.Symbol.to_list()
+    
+    # Convert the filtered DataFrame to a list of symbols
+    tickers = tickers_df['Symbol'].to_list()
+    
+    # Remove specific tickers
+    tickers_to_remove = ['BF.B', 'BRK.B']
+    tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
 
     # Define the past date from which to fetch data
     past_date = datetime.now() - timedelta(days=365 * 3)  # Approximately 3 years ago

@@ -11,6 +11,10 @@ class StockData(models.Model):
     class Meta:
         unique_together = ('symbol', 'date')
 
+    @staticmethod
+    def flush():
+        StockData.objects.all().delete()
+        
 class CovarianceData(models.Model):
     tickers = models.CharField(max_length=255)
     covariance_matrix = models.TextField()  # Store as a serialized string
@@ -33,3 +37,15 @@ class CovarianceData(models.Model):
     @staticmethod
     def flush():
         CovarianceData.objects.all().delete()
+
+class SP500Ticker(models.Model):
+    symbol = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=255)
+    industry = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.symbol
+
+    @staticmethod
+    def flush():
+        SP500Ticker.objects.all().delete()

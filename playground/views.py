@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import logging
 from .forms import ParametersForm, ResearchForm
-from .models import CovarianceData
+from .models import CovarianceData, SP500Ticker
 import yfinance as yf
 import time as t
 import json
@@ -15,6 +15,8 @@ from datetime import datetime, timedelta, date, time
 from statistics import NormalDist
 
 def main(request):
+    #CovarianceData.flush()
+    #SP500Ticker.flush()
     return render(request, 'main.html')
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0):
@@ -150,15 +152,20 @@ def get_covariance():
     start_time = time(0, 0)  # 12:00 AM
     end_time = time(0, 30)  # 12:30 AM
 
-    # Fetch tickers
-    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    tickers = tickers_df.Symbol.to_list()
-    tickers_str = ','.join(sorted(tickers))
+    # Query all symbols from the database
+    tickers = SP500Ticker.objects.all().values_list('symbol', flat=True)
     
+    # Convert the QuerySet to a list
+    tickers = list(tickers)
+
+    tickers_str = ','.join(sorted(tickers))
+
     today = date.today()
     
-    # Check if current time is between 11:59 PM and 12:30 AM
-    if current_time >= start_time or current_time <= end_time:
+    CovarianceData.flush()
+
+    # Check if current time is between 12:00 AM and 12:30 AM
+    if current_time >= start_time and current_time <= end_time:
         return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
 
     # Check if the data already exists for today
@@ -168,25 +175,26 @@ def get_covariance():
             S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
             return S2
         except AttributeError:
-            # If deserialization fails, fall through to recalculation
             pass
 
     # If not during the restricted time and no entry was found or deserialization failed
     csv_file_path = 'tickers_prices.csv'
     tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
 
-    print(tickers_price_df)
     # Ensure DataFrame is not empty
     if tickers_price_df.empty:
         raise ValueError("Tickers price DataFrame is empty.")
 
-    # Ensure there are no missing values
+    # Handle missing values by dropping rows with any missing values
+    tickers_price_df.dropna(inplace=True)
+
+    # Ensure there are no missing values after dropping
     if tickers_price_df.isnull().values.any():
-        raise ValueError("Tickers price DataFrame contains missing values.")
+        raise ValueError("Tickers price DataFrame contains missing values even after dropping.")
 
     # Calculate covariance matrix
     try:
-        S2 = exp_cov(tickers_price_df, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+        S2 = exp_cov(tickers_price_df, frequency=tickers_price_df.shape[1], span=tickers_price_df.shape[1], log_returns=True)
         if S2.empty:
             raise ValueError("Calculated covariance matrix is empty.")
     except Exception as e:
@@ -215,6 +223,10 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
 
     tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
     tickers = tickers.Symbol.to_list()
+
+    # Remove specific tickers
+    tickers_to_remove = ['BF.B', 'BRK.B']
+    tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
 
     csv_file_path = 'tickers_prices.csv'
 
