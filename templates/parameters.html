@@ -223,7 +223,7 @@ Parameters | Portfolio Builder
 
         // Create the color scale bar
         const colorScaleBar = document.getElementById('colorScaleBar');
-        const numColors = 20; // Number of steps in the color scale
+        const numColors = 53; // Number of steps in the color scale
         for (let i = 0; i <= numColors; i++) {
             const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
             const color = interpolateColor(value, minSharpe, maxSharpe);

@@ -27,19 +27,23 @@ def save_data():
 
     # Check if today's date is the most recent date in the CSV
     date_today = datetime.now().date()
-    print(most_recent_date and most_recent_date.date() == date_today)
-    if most_recent_date and most_recent_date.date() == date_today:
-        logger.info("The stock data is already up to date for today.")
-        return
-    else:
-        logger.info("Updating stock data...")
+    try:
+        if most_recent_date:
+            date_diff = date_today - most_recent_date.date()
+            if date_diff.days <= 1:
+                logger.info("The stock data is already up to date or within one day of the most recent date.")
+                return
+            else:
+                logger.info("Updating stock data...")
+    except AttributeError:
+        pass
 
     # Fetch tickers
     tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    
+
     # Convert the filtered DataFrame to a list of symbols
     tickers = tickers_df['Symbol'].to_list()
-    
+
     # Remove specific tickers
     tickers_to_remove = ['BF.B', 'BRK.B']
     tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
@@ -47,7 +51,7 @@ def save_data():
     # Define the past date from which to fetch data
     past_date = datetime.now() - timedelta(days=365 * 3)  # Approximately 3 years ago
 
-# Download stock data
+    # Download stock data
     tickers_price_df = yf.download(tickers, start=past_date, end=datetime.now(), auto_adjust=True)['Close']
 
     # Save or update the DataFrame to the CSV file

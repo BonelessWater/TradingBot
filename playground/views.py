@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import logging
 from .forms import ParametersForm, ResearchForm
 from .models import CovarianceData, SP500Ticker
@@ -13,11 +13,33 @@ from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date, time
 from statistics import NormalDist
+from datetime import datetime, timedelta
 
 def main(request):
     #CovarianceData.flush()
     #SP500Ticker.flush()
+    #store_tickers_in_db()
     return render(request, 'main.html')
+
+def store_tickers_in_db():
+    # Fetch tickers from Wikipedia
+    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+
+    # Remove specific tickers
+    tickers_to_remove = ['BF.B', 'BRK.B']
+    tickers_df = tickers_df[~tickers_df['Symbol'].isin(tickers_to_remove)]
+    
+    # Iterate through the DataFrame and save each ticker to the database
+    for _, row in tickers_df.iterrows():
+        SP500Ticker.objects.update_or_create(
+            symbol=row['Symbol'],
+            defaults={
+                'name': row['Security'],
+                'industry': row['GICS Sector']
+            }
+        )
+
+    return "Tickers updated successfully."
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0):
     stock = yf.Ticker(symbol)
@@ -109,11 +131,7 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     return valuation, finance, data
 
 def get_sp500_data():
-    from datetime import datetime, timedelta
-    import yfinance as yf
-    import pandas as pd
-    import json
-
+    
     # Define the ticker symbol for the S&P 500
     ticker_symbol = '^GSPC'
     
@@ -154,22 +172,24 @@ def get_covariance():
 
     # Query all symbols from the database
     tickers = SP500Ticker.objects.all().values_list('symbol', flat=True)
-    
-    # Convert the QuerySet to a list
+
+    # Convert the QuerySet to a list and remove specific tickers
     tickers = list(tickers)
+    
+    if not tickers:
+        raise ValueError("No tickers available after filtering.")
 
     tickers_str = ','.join(sorted(tickers))
-
+    print(f"Tickers string: {tickers_str}")
     today = date.today()
-    
-    CovarianceData.flush()
 
     # Check if current time is between 12:00 AM and 12:30 AM
-    if current_time >= start_time and current_time <= end_time:
-        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
+    # if current_time >= start_time and current_time <= end_time:
+    #    return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
 
     # Check if the data already exists for today
     covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
+    print(f"Covariance entry: {covariance_entry}")
     if covariance_entry:
         try:
             S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
@@ -204,7 +224,7 @@ def get_covariance():
     CovarianceData.objects.update_or_create(
         tickers=tickers_str,
         calculation_date=today,
-        defaults={'covariance_matrix': S2}
+        defaults={'covariance_matrix': S2.to_json()}
     )
 
     return S2
