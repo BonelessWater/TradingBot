@@ -60,39 +60,43 @@ Parameters | Portfolio Builder
         <div id="colorScaleBar" class="color-scale-bar"></div>
     </div>
 </div>
-<div>
-    <h5 class="center">Best Portfolio</h5>
+<div class="card">
+    <div class="card-content">
+        <div>
+            <h5 class="center card-title">Best Portfolio</h5>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Percentage</th>
+                    <th>Investment Amount</th>
+                    <th>Market Cap</th>
+                    <th>Enterprise Value</th>
+                    <th>Trailing P/E</th>
+                    <th>Forward P/E</th>
+                    <th>PEG Ratio</th>
+                    <th>Price Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, item in financial_data.items %}
+                <tr>
+                    <td>{{ item.ticker }}</td>
+                    <td>{{ item.percentage }}</td>
+                    <td>{{ item.investmentamount }}</td>
+                    <td>{{ item.marketcap }}</td>
+                    <td>{{ item.enterprisevalue }}</td>
+                    <td>{{ item.trailingpe }}</td>
+                    <td>{{ item.forwardpe }}</td>
+                    <td>{{ item.pegratio }}</td>
+                    <td>{{ item.pricesales }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Percentage</th>
-            <th>Investment Amount</th>
-            <th>Market Cap</th>
-            <th>Enterprise Value</th>
-            <th>Trailing P/E</th>
-            <th>Forward P/E</th>
-            <th>PEG Ratio</th>
-            <th>Price Sales</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for key, item in financial_data.items %}
-        <tr>
-            <td>{{ item.ticker }}</td>
-            <td>{{ item.percentage }}</td>
-            <td>{{ item.investmentamount }}</td>
-            <td>{{ item.marketcap }}</td>
-            <td>{{ item.enterprisevalue }}</td>
-            <td>{{ item.trailingpe }}</td>
-            <td>{{ item.forwardpe }}</td>
-            <td>{{ item.pegratio }}</td>
-            <td>{{ item.pricesales }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 
 <div class="fixed-action-btn">
     <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
