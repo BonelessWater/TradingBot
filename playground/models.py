@@ -2,6 +2,8 @@ from django.db import models
 import numpy as np
 from datetime import date
 import pandas as pd
+from django.utils import timezone
+
 class StockData(models.Model):
     symbol = models.CharField(max_length=10)
     date = models.DateField()
@@ -49,3 +51,39 @@ class SP500Ticker(models.Model):
     @staticmethod
     def flush():
         SP500Ticker.objects.all().delete()
+
+class FinancialData(models.Model):
+    created_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    ticker = models.CharField(max_length=10, unique=True)
+    market_cap = models.BigIntegerField(null=True, blank=True)
+    enterprise_value = models.BigIntegerField(null=True, blank=True)
+    trailing_pe = models.FloatField(null=True, blank=True)
+    forward_pe = models.FloatField(null=True, blank=True)
+    peg_ratio = models.FloatField(null=True, blank=True)
+    price_sales = models.FloatField(null=True, blank=True)
+    price_book = models.FloatField(null=True, blank=True)
+    ev_revenue = models.FloatField(null=True, blank=True)
+    ev_ebitda = models.FloatField(null=True, blank=True)
+    profit_margin = models.FloatField(null=True, blank=True)
+    return_on_assets = models.FloatField(null=True, blank=True)
+    return_on_equity = models.FloatField(null=True, blank=True)
+    revenue = models.BigIntegerField(null=True, blank=True)
+    net_income = models.BigIntegerField(null=True, blank=True)
+    diluted_eps = models.FloatField(null=True, blank=True)
+    total_cash = models.BigIntegerField(null=True, blank=True)
+    debt_to_equity = models.FloatField(null=True, blank=True)
+    levered_free_cash_flow = models.BigIntegerField(null=True, blank=True)
+    earnings_per_share = models.FloatField(null=True, blank=True)
+    price_to_earnings_ratio = models.FloatField(null=True, blank=True)
+    dividend_yield = models.FloatField(null=True, blank=True)
+    book_value = models.FloatField(null=True, blank=True)
+    debt_to_equity_ratio = models.FloatField(null=True, blank=True)
+    revenue_growth = models.FloatField(null=True, blank=True)
+    free_cash_flow = models.BigIntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.ticker
+    
+    @staticmethod
+    def flush():
+        FinancialData.objects.all().delete()

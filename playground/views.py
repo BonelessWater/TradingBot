@@ -1,8 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 import logging
 from .forms import ParametersForm, ResearchForm
-from .models import CovarianceData, SP500Ticker
+from .models import CovarianceData, SP500Ticker, FinancialData
 import yfinance as yf
 import time as t
 import json
@@ -21,107 +21,59 @@ def main(request):
     #store_tickers_in_db()
     return render(request, 'main.html')
 
-def store_tickers_in_db():
-    # Fetch tickers from Wikipedia
-    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-
-    # Remove specific tickers
-    tickers_to_remove = ['BF.B', 'BRK.B']
-    tickers_df = tickers_df[~tickers_df['Symbol'].isin(tickers_to_remove)]
-    
-    # Iterate through the DataFrame and save each ticker to the database
-    for _, row in tickers_df.iterrows():
-        SP500Ticker.objects.update_or_create(
-            symbol=row['Symbol'],
-            defaults={
-                'name': row['Security'],
-                'industry': row['GICS Sector']
-            }
-        )
-
-    return "Tickers updated successfully."
-
 def get_financial_data(symbol, investment_amount = -1, weight = 0):
-    stock = yf.Ticker(symbol)
 
-    # Valuation Measures
-    market_cap = stock.info.get('marketCap')
-    enterprise_value = stock.info.get('enterpriseValue')
-    trailing_pe = stock.info.get('trailingPE')
-    forward_pe = stock.info.get('forwardPE')
-    peg_ratio = stock.info.get('pegRatio')
-    price_sales = stock.info.get('priceToSalesTrailing12Months')
-    price_book = stock.info.get('priceToBook')
-    ev_revenue = stock.info.get('enterpriseToRevenue')
-    ev_ebitda = stock.info.get('enterpriseToEbitda')
-
-    # Financial Highlights - Profitability and Income Statement
-    profit_margin = stock.info.get('profitMargins')
-    return_on_assets = stock.info.get('returnOnAssets')
-    return_on_equity = stock.info.get('returnOnEquity')
-    revenue = stock.info.get('totalRevenue')
-    net_income = stock.info.get('netIncomeToCommon')
-    diluted_eps = stock.info.get('trailingEps')
-
-    # Financial Highlights - Balance Sheet and Cash Flow
-    total_cash = stock.info.get('totalCash')
-    debt_to_equity = stock.info.get('debtToEquity')
-    levered_free_cash_flow = stock.info.get('freeCashflow')
-
-    # Custom Financial Metrics
-    earnings_per_share = stock.info.get('trailingEps')
-    price_to_earnings_ratio = stock.info.get('trailingPE')
-    dividend_yield = stock.info.get('dividendYield')
-    book_value = stock.info.get('bookValue')
-    debt_to_equity_ratio = stock.info.get('debtToEquity')
-    revenue_growth = stock.info.get('revenueGrowth')
-    free_cash_flow = stock.info.get('freeCashflow')
-    return_on_equity = stock.info.get('returnOnEquity')
-
+    # Query the database for the specified ticker
+    financial_data = FinancialData.objects.get(ticker=symbol)
+    
+    # Populate the 'valuation' dictionary
     valuation = {
-        'ticker': symbol,
-        'marketcap': market_cap,
-        'enterprisevalue': enterprise_value,
-        'trailingpe': trailing_pe,
-        'forwardpe': forward_pe,
-        'pegratio': peg_ratio,
-        'pricesales': price_sales,
-        'pricebook': price_book,
-        'enterpriserevenue': ev_revenue,
-        'enterpriseebitda': ev_ebitda,
+        'ticker': financial_data.ticker,
+        'marketcap': financial_data.market_cap,
+        'enterprisevalue': financial_data.enterprise_value,
+        'trailingpe': financial_data.trailing_pe,
+        'forwardpe': financial_data.forward_pe,
+        'pegratio': financial_data.peg_ratio,
+        'pricesales': financial_data.price_sales,
+        'pricebook': financial_data.price_book,
+        'enterpriserevenue': financial_data.ev_revenue,
+        'enterpriseebitda': financial_data.ev_ebitda,
     }
     
+    # Populate the 'finance' dictionary
     finance = {
-        'profit margin': profit_margin,
-        'return on assets (ttm)': return_on_assets,
-        'return on equity (ttm)': return_on_equity,
-        'revenue (ttm)': revenue,
-        'net income avi to common (ttm)': net_income,
-        'diluted eps (ttm)': diluted_eps,
-        'total cash (mrq)': total_cash,
-        'total debt/equity (mrq)': debt_to_equity,
-        'levered free cash flow (ttm)': levered_free_cash_flow,
+        'profit margin': financial_data.profit_margin,
+        'return on assets (ttm)': financial_data.return_on_assets,
+        'return on equity (ttm)': financial_data.return_on_equity,
+        'revenue (ttm)': financial_data.revenue,
+        'net income avi to common (ttm)': financial_data.net_income,
+        'diluted eps (ttm)': financial_data.diluted_eps,
+        'total cash (mrq)': financial_data.total_cash,
+        'total debt/equity (mrq)': financial_data.debt_to_equity,
+        'levered free cash flow (ttm)': financial_data.levered_free_cash_flow,
     }
     
+    # Populate the 'data' dictionary
     data = {
-        'ticker': symbol,
-        'marketcap': market_cap,
-        'enterprisevalue': enterprise_value,
-        'trailingpe': trailing_pe,
-        'forwardpe': forward_pe,
-        'pegratio': peg_ratio,
-        'pricesales': price_sales,
+        'ticker': financial_data.ticker,
+        'marketcap': financial_data.market_cap,
+        'enterprisevalue': financial_data.enterprise_value,
+        'trailingpe': financial_data.trailing_pe,
+        'forwardpe': financial_data.forward_pe,
+        'pegratio': financial_data.peg_ratio,
+        'pricesales': financial_data.price_sales,
     }
-
+    
+    # Populate the 'other' dictionary
     other = {
-        'earnings per share': earnings_per_share,
-        'price to earnings ratio': price_to_earnings_ratio,
-        'dividend yield': dividend_yield,
-        'book value': book_value,
-        'debt to equity ratio': debt_to_equity_ratio,
-        'revenue growth': revenue_growth,
-        'free cash flow': free_cash_flow,
-        'return on equity': return_on_equity
+        'earnings per share': financial_data.earnings_per_share,
+        'price to earnings ratio': financial_data.price_to_earnings_ratio,
+        'dividend yield': financial_data.dividend_yield,
+        'book value': financial_data.book_value,
+        'debt to equity ratio': financial_data.debt_to_equity_ratio,
+        'revenue growth': financial_data.revenue_growth,
+        'free cash flow': financial_data.free_cash_flow,
+        'return on equity': financial_data.return_on_equity,
     }
 
     if investment_amount != -1:
@@ -180,7 +132,6 @@ def get_covariance():
         raise ValueError("No tickers available after filtering.")
 
     tickers_str = ','.join(sorted(tickers))
-    print(f"Tickers string: {tickers_str}")
     today = date.today()
 
     # Check if current time is between 12:00 AM and 12:30 AM
@@ -189,7 +140,7 @@ def get_covariance():
 
     # Check if the data already exists for today
     covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
-    print(f"Covariance entry: {covariance_entry}")
+
     if covariance_entry:
         try:
             S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
@@ -230,6 +181,8 @@ def get_covariance():
     return S2
 
 def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var):
+    min_return = 0.0
+    min_var = 0.8
     horizon = np.sqrt(horizon)
 
     z = NormalDist().inv_cdf(confidence_level)
@@ -245,7 +198,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     tickers = tickers.Symbol.to_list()
 
     # Remove specific tickers
-    tickers_to_remove = ['BF.B', 'BRK.B']
+    tickers_to_remove = ['BF.B', 'BRK.B', 'BF-B', 'BRK-B']
     tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
 
     csv_file_path = 'tickers_prices.csv'
@@ -276,9 +229,9 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     exp_ret_sort = mu2.sort_values(ascending=False)
     exp_ret_sort.drop(exp_ret_sort.tail(len(exp_ret_sort) - number_of_stocks).index, inplace=True)
 
-    tickers_returns = exp_ret_sort.index.tolist()
+    tickers_return = exp_ret_sort.index.tolist()
 
-    cov_returns = exp_cov(tickers_price_df[tickers_returns], frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
+    return_cov = exp_cov(tickers_price_df[tickers_return], frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
     
     variance_expon_list = []
 
@@ -295,7 +248,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
 
     tickers_risk = stdev_expon_sort.index.tolist()
 
-    cov_risk = exp_cov(tickers_price_df[tickers_risk], frequency = len(tickers_price_df), span = len(tickers_price_df), log_returns = True)
+    risk_cov = exp_cov(tickers_price_df[tickers_risk], frequency = len(tickers_price_df), span = len(tickers_price_df), log_returns = True)
     
     sharpe = mu2/stdev_expon_df['Deviation']
     sharpe_expon_df = pd.DataFrame(sharpe, columns = ['Sharpe Ratio'])
@@ -307,35 +260,89 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
 
     sharpe_cov = exp_cov(tickers_price_df[tickers_sharpe], frequency = len(tickers_price_df), span = len(tickers_price_df), log_returns = True)
     
-    ##Optimizar portafolio para maximizar ratio de sharpe (retornos exponenciales)
+    # Maximum Sharpe ratio
     ef_sharpe = EfficientFrontier(mu2[tickers_sharpe], sharpe_cov)
-    weights = ef_sharpe.max_sharpe()
-    cleaned_weights = ef_sharpe.clean_weights()
-    ef_sharpe.save_weights_to_file("weights.txt")  # saves to file
+    weights_sharpe = ef_sharpe.max_sharpe()
+    ef_sharpe.clean_weights()
+
+    # Minimum risk for a given return
+    ef_risk = EfficientFrontier(mu2[tickers_risk], risk_cov)
+    weights_risk = ef_risk.efficient_return(target_return=min_return)
+    ef_risk.clean_weights()
+
+    # Maximum return for a given risk
+    ef_return = EfficientFrontier(mu2[tickers_return], return_cov)
+    
+    weights_return = ef_return.efficient_risk(target_volatility=min_var)
+    ef_return.clean_weights()
+
     ef_sharpe.portfolio_performance(verbose=True)
+    ef_risk.portfolio_performance(verbose=True)
+    ef_return.portfolio_performance(verbose=True)
 
     ef_sharpe_plot = EfficientFrontier(mu2[tickers_sharpe], sharpe_cov)
+    ef_risk_plot = EfficientFrontier(mu2[tickers_risk], risk_cov)
+    ef_return_plot = EfficientFrontier(mu2[tickers_return], return_cov)
 
+  
     # Generate random portfolios
-    start = t.time()
-    n_samples = 5000
+    n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_sharpe_plot.n_assets), n_samples)
     rets = w.dot(ef_sharpe_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_sharpe_plot.cov_matrix @ w.T))
     sharpes = rets / stds
-    print(t.time() -start)
     # Prepare the dictionary
-    data_dict = {
+    data_dict_sharpe = {
+        'x': stds.tolist(), 
+        'y': rets.tolist(), 
+        'sharpe': sharpes.tolist() 
+    }
+    
+    # Generate random portfolios
+    n_samples = 1000
+    w = np.random.dirichlet(np.ones(ef_risk_plot.n_assets), n_samples)
+    rets = w.dot(ef_risk_plot.expected_returns)
+    stds = np.sqrt(np.diag(w @ ef_risk_plot.cov_matrix @ w.T))
+    sharpes = rets / stds
+    # Prepare the dictionary
+    data_dict_risk = {
+        'x': stds.tolist(), 
+        'y': rets.tolist(), 
+        'sharpe': sharpes.tolist() 
+    }
+    
+    # Generate random portfolios
+    n_samples = 1000
+    w = np.random.dirichlet(np.ones(ef_return_plot.n_assets), n_samples)
+    rets = w.dot(ef_return_plot.expected_returns)
+    stds = np.sqrt(np.diag(w @ ef_return_plot.cov_matrix @ w.T))
+    sharpes = rets / stds
+    # Prepare the dictionary
+    data_dict_return = {
         'x': stds.tolist(), 
         'y': rets.tolist(), 
         'sharpe': sharpes.tolist() 
     }
 
-    financial_data = {}
-    for symbol in weights:
-        valuation, finance, financial_data[symbol] = get_financial_data(symbol, investment_amount, weights[symbol])
+    financial_data_sharpe = {}
+    financial_data_risk = {}
+    financial_data_return = {}
+    for symbol in weights_sharpe:
+        valuation_sharpe, finance_sharpe, financial_data_sharpe[symbol] = get_financial_data(symbol, investment_amount, weights_sharpe[symbol])
+    for symbol in weights_risk:
+        valuation_risk, finance_risk, financial_data_risk[symbol] = get_financial_data(symbol, investment_amount, weights_risk[symbol])
+    for symbol in weights_return:
+        valuation_return, finance_return, financial_data_return[symbol] = get_financial_data(symbol, investment_amount, weights_return[symbol])
+
+    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data_sharpe': financial_data_sharpe}
+    risk_dict = {'valuation_risk': valuation_risk, 'finance_risk': finance_risk, 'financial_data_risk': financial_data_risk}
+    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data_return': financial_data_return}
+
+    sharpe_data = json.dumps(data_dict_sharpe)
+    risk_data = json.dumps(data_dict_risk)
+    return_data = json.dumps(data_dict_return)
     
-    return json.dumps(data_dict), valuation, finance, financial_data
+    return sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict
 
 def parameters(request):    
     if request.method == 'POST':
@@ -348,9 +355,9 @@ def parameters(request):
             confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
             
-            chart_data, valuation, finance, financial_data = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var)
+            sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var)
 
-            return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_data': chart_data, 'chart_type': 'scatter', 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
+            return render(request, 'parameters.html', {'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
     chart_data = get_sp500_data()
     return render(request, 'parameters.html', {'title': 'S&P 500','chart_data': chart_data, 'chart_type': 'line'})
 

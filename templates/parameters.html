@@ -53,48 +53,147 @@ Parameters | Portfolio Builder
 
 {% block content %}
 
+<!--Sharpe-->
 <div class="col s12">
     <div class="row">
-        <canvas id="myChart"></canvas>
+        <canvas id="myChartSharpe"></canvas>
         <h6>Sharpe Ratio:</h6>
-        <div id="colorScaleBar" class="color-scale-bar"></div>
+        <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
     </div>
 </div>
-<div class="card">
-    <div class="card-content">
-        <div>
-            <h5 class="center card-title">Best Portfolio</h5>
+<div>
+    <div class="card">
+        <div class="card-content">
+            <div>
+                <h5 class="center card-title">Best Portfolio by Sharpe Ratio</h5>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Percentage</th>
+                        <th>Investment Amount</th>
+                        <th>Market Cap</th>
+                        <th>Enterprise Value</th>
+                        <th>Trailing P/E</th>
+                        <th>Forward P/E</th>
+                        <th>PEG Ratio</th>
+                        <th>Price Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, item in sharpe_dict.financial_data_sharpe.items %}
+                    <tr>
+                        <td>{{ item.ticker }}</td>
+                        <td>{{ item.percentage }}</td>
+                        <td>{{ item.investmentamount }}</td>
+                        <td>{{ item.marketcap }}</td>
+                        <td>{{ item.enterprisevalue }}</td>
+                        <td>{{ item.trailingpe }}</td>
+                        <td>{{ item.forwardpe }}</td>
+                        <td>{{ item.pegratio }}</td>
+                        <td>{{ item.pricesales }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Percentage</th>
-                    <th>Investment Amount</th>
-                    <th>Market Cap</th>
-                    <th>Enterprise Value</th>
-                    <th>Trailing P/E</th>
-                    <th>Forward P/E</th>
-                    <th>PEG Ratio</th>
-                    <th>Price Sales</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for key, item in financial_data.items %}
-                <tr>
-                    <td>{{ item.ticker }}</td>
-                    <td>{{ item.percentage }}</td>
-                    <td>{{ item.investmentamount }}</td>
-                    <td>{{ item.marketcap }}</td>
-                    <td>{{ item.enterprisevalue }}</td>
-                    <td>{{ item.trailingpe }}</td>
-                    <td>{{ item.forwardpe }}</td>
-                    <td>{{ item.pegratio }}</td>
-                    <td>{{ item.pricesales }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    </div>
+</div>
+<!--Risk-->
+<div class="col s12">
+    <div class="row">
+        <canvas id="myChartRisk"></canvas>
+        <h6>Sharpe Ratio:</h6>
+        <div id="colorScaleBarRisk" class="color-scale-bar"></div>
+    </div>
+</div>
+<div>
+    <div class="card">
+        <div class="card-content">
+            <div>
+                <h5 class="center card-title">Best Portfolio by Risk</h5>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Percentage</th>
+                        <th>Investment Amount</th>
+                        <th>Market Cap</th>
+                        <th>Enterprise Value</th>
+                        <th>Trailing P/E</th>
+                        <th>Forward P/E</th>
+                        <th>PEG Ratio</th>
+                        <th>Price Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, item in risk_dict.financial_data_risk.items %}
+                    <tr>
+                        <td>{{ item.ticker }}</td>
+                        <td>{{ item.percentage }}</td>
+                        <td>{{ item.investmentamount }}</td>
+                        <td>{{ item.marketcap }}</td>
+                        <td>{{ item.enterprisevalue }}</td>
+                        <td>{{ item.trailingpe }}</td>
+                        <td>{{ item.forwardpe }}</td>
+                        <td>{{ item.pegratio }}</td>
+                        <td>{{ item.pricesales }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--Returns-->
+
+<div class="col s12">
+    <div class="row">
+        <canvas id="myChartReturn"></canvas>
+        <h6>Sharpe Ratio:</h6>
+        <div id="colorScaleBarReturn" class="color-scale-bar"></div>
+    </div>
+</div>
+<div>
+    <div class="card">
+        <div class="card-content">
+            <div>
+                <h5 class="center card-title">Best Portfolio by Returns</h5>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Percentage</th>
+                        <th>Investment Amount</th>
+                        <th>Market Cap</th>
+                        <th>Enterprise Value</th>
+                        <th>Trailing P/E</th>
+                        <th>Forward P/E</th>
+                        <th>PEG Ratio</th>
+                        <th>Price Sales</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, item in return_dict.financial_data_return.items %}
+                    <tr>
+                        <td>{{ item.ticker }}</td>
+                        <td>{{ item.percentage }}</td>
+                        <td>{{ item.investmentamount }}</td>
+                        <td>{{ item.marketcap }}</td>
+                        <td>{{ item.enterprisevalue }}</td>
+                        <td>{{ item.trailingpe }}</td>
+                        <td>{{ item.forwardpe }}</td>
+                        <td>{{ item.pegratio }}</td>
+                        <td>{{ item.pricesales }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -103,148 +202,124 @@ Parameters | Portfolio Builder
 </div>
 
 <script>
-    var chartData = JSON.parse('{{ chart_data|escapejs }}');
+
     var chartType = '{{ chart_type|escapejs }}';
 
-    function interpolateColor(value, min, max) {
-        scale = d3.scaleSequential(d3.interpolateViridis).domain([min, max]);
-        return scale(value);
-    }
+    document.addEventListener('DOMContentLoaded', function () {
 
-    if (chartType == 'scatter'){
-        // Calculate min and max Sharpe ratios
-        minSharpe = Math.min(...chartData.sharpe);
-        maxSharpe = Math.max(...chartData.sharpe);
+        function interpolateColor(value, min, max) {
+            scale = d3.scaleSequential(d3.interpolateViridis).domain([min, max]);
+            return scale(value);
+        }
 
-        // Create the dataset with dynamic colors
-        data = chartData.x.map((x, i) => {
-            color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
-            return {
-                x: x,
-                y: chartData.y[i],
-                backgroundColor: "#000000",
-                borderColor: "#000000",
-                pointRadius: 3,
+        function createChart(chartData, id, colorbar){
+            var pointBackgroundColors = [];
+            let ctx = document.getElementById(id).getContext('2d');   
+
+            // Calculate min and max Sharpe ratios
+            minSharpe = Math.min(...chartData.sharpe);
+            maxSharpe = Math.max(...chartData.sharpe);
+
+            // Create the dataset with dynamic colors
+            data = chartData.x.map((x, i) => {
+                color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
+                return {
+                    x: x,
+                    y: chartData.y[i],
+                    backgroundColor: "#000000",
+                    borderColor: "#000000",
+                    pointRadius: 3,
+                };
+            });
+
+            config = {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Efficient Frontier',
+                        data: data,
+                        pointBackgroundColor: pointBackgroundColors,
+                        pointStyle: 'circle',
+                        pointRadius: 2.5,
+                    }]
+                }, 
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            title: {
+                                display: true,
+                                text: 'Risk'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Return'
+                            }
+                        }
+                    }, plugins: {
+                        title: {
+                            display: true,
+                            text: 'Efficient Frontier',
+                            font: {
+                                size: 20
+                            }
+                        },
+                        legend: {
+                            display: false,
+                        }
+                    }
+                }
             };
-        });
-    }
-    var pointBackgroundColors = [];
-    let ctx = document.getElementById('myChart').getContext('2d');
-    if (chartType == 'line') {
-        config = {
-            type: 'line',
-            data: {
-                labels: chartData.date,
-                datasets: [{
-                    label: 'Close Price',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    data: chartData['Close Price'],
-                    borderWidth: 1,
-                    fill: true,
-                    pointStyle: false,
-                    pointRadius: 0,
-                },
-                {
-                    label: '50-Day Moving Average',
-                    data: chartData['Moving Average'],
-                    borderColor: 'rgba(135, 206, 235, 1)', // Darker Light Blue
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    borderDash: [5, 5],
-                }]
-            }, 
-            options: {
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'S&P 500',
-                        font: {
-                            size: 20
-                        }
-                    }
-                }
+            var myChart = new Chart(ctx, config);
+            minSharpe = Math.min(...chartData.sharpe);
+            maxSharpe = Math.max(...chartData.sharpe);
+
+            for (i = 0; i < myChart.data.datasets[0].data.length; i++) {
+                //color = interpolateColor(myChart.data.datasets[0].sharpe[i], minSharpe, maxSharpe);
+                color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
+                pointBackgroundColors.push(color);
             }
-        }
-        var myChart = new Chart(ctx, config);
-    } else if (chartType == 'scatter') {
-        config = {
-            type: 'scatter',
-            data: {
-                datasets: [{
-                    label: 'Efficient Frontier',
-                    data: data,
-                    pointBackgroundColor: pointBackgroundColors,
-                    pointStyle: 'circle',
-                    pointRadius: 2.5,
-                }]
-            }, 
-            options: {
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: {
-                            display: true,
-                            text: 'Risk'
-                        }
-                    },
-                    y: {
-                        type: 'linear',
-                        title: {
-                            display: true,
-                            text: 'Return'
-                        }
-                    }
-                }, plugins: {
-                    title: {
-                        display: true,
-                        text: 'Efficient Frontier',
-                        font: {
-                            size: 20
-                        }
-                    },
-                    legend: {
-                        display: false,
-                    }
-                }
+            myChart.update();
+
+            // Create the color scale bar
+            const colorScaleBar = document.getElementById(colorbar);
+            const numColors = 50; // Number of steps in the color scale
+            for (let i = 0; i <= numColors; i++) {
+                const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
+                const color = interpolateColor(value, minSharpe, maxSharpe);
+                const div = document.createElement('div');
+                div.style.backgroundColor = color;
+                colorScaleBar.appendChild(div);
             }
-        };
-        var myChart = new Chart(ctx, config);
-        minSharpe = Math.min(...chartData.sharpe);
-        maxSharpe = Math.max(...chartData.sharpe);
 
-        for (i = 0; i < myChart.data.datasets[0].data.length; i++) {
-            //color = interpolateColor(myChart.data.datasets[0].sharpe[i], minSharpe, maxSharpe);
-            color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
-            pointBackgroundColors.push(color);
+            // Add min and max Sharpe values
+            const minLabel = document.createElement('span');
+            minLabel.textContent = `Min: ${minSharpe.toFixed(2)}`;
+            colorScaleBar.appendChild(minLabel);
+
+            const maxLabel = document.createElement('span');
+            maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
+            colorScaleBar.appendChild(maxLabel);
         }
-        myChart.update();
-
-        console.log(document.getElementById('colorScaleBar'));
-        
-        // Create the color scale bar
-        const colorScaleBar = document.getElementById('colorScaleBar');
-        const numColors = 50; // Number of steps in the color scale
-        for (let i = 0; i <= numColors; i++) {
-            const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
-            const color = interpolateColor(value, minSharpe, maxSharpe);
-            const div = document.createElement('div');
-            div.style.backgroundColor = color;
-            colorScaleBar.appendChild(div);
-        }
-
-        // Add min and max Sharpe values
-        const minLabel = document.createElement('span');
-        minLabel.textContent = `Min: ${minSharpe.toFixed(2)}`;
-        colorScaleBar.appendChild(minLabel);
-
-        const maxLabel = document.createElement('span');
-        maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
-        colorScaleBar.appendChild(maxLabel);
-    }
-
-
     
+
+    var id_sharpe = 'myChartSharpe';
+    var color_bar_sharpe = 'colorScaleBarSharpe';
+    var id_risk = 'myChartRisk';
+    var color_bar_risk = 'colorScaleBarRisk';
+    var id_return = 'myChartReturn';
+    var color_bar_return = 'colorScaleBarReturn';
+
+    let total_data = [JSON.parse('{{ sharpe_data|escapejs }}'), JSON.parse('{{ risk_data|escapejs }}'), JSON.parse('{{ return_data|escapejs }}')]
+
+    createChart(total_data[0], id_sharpe, color_bar_sharpe);
+    createChart(total_data[1], id_risk, color_bar_risk);
+    createChart(total_data[2], id_return, color_bar_return);
+
+    });
 </script>
 {% endblock content %}

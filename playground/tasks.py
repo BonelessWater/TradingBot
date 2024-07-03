@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import yfinance as yf
 import logging
+from .models import FinancialData
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -57,3 +58,94 @@ def save_data():
     # Save or update the DataFrame to the CSV file
     tickers_price_df.to_csv(csv_file_path)
     logger.info("Stock data has been successfully updated.")
+
+def get_financial_data(symbol):
+    stock = yf.Ticker(symbol)
+
+    # Fetching financial data
+    market_cap = stock.info.get('marketCap')
+    enterprise_value = stock.info.get('enterpriseValue')
+    trailing_pe = stock.info.get('trailingPE')
+    forward_pe = stock.info.get('forwardPE')
+    peg_ratio = stock.info.get('pegRatio')
+    price_sales = stock.info.get('priceToSalesTrailing12Months')
+    price_book = stock.info.get('priceToBook')
+    ev_revenue = stock.info.get('enterpriseToRevenue')
+    ev_ebitda = stock.info.get('enterpriseToEbitda')
+    profit_margin = stock.info.get('profitMargins')
+    return_on_assets = stock.info.get('returnOnAssets')
+    return_on_equity = stock.info.get('returnOnEquity')
+    revenue = stock.info.get('totalRevenue')
+    net_income = stock.info.get('netIncomeToCommon')
+    diluted_eps = stock.info.get('trailingEps')
+    total_cash = stock.info.get('totalCash')
+    debt_to_equity = stock.info.get('debtToEquity')
+    levered_free_cash_flow = stock.info.get('freeCashflow')
+    earnings_per_share = stock.info.get('trailingEps')
+    price_to_earnings_ratio = stock.info.get('trailingPE')
+    dividend_yield = stock.info.get('dividendYield')
+    book_value = stock.info.get('bookValue')
+    debt_to_equity_ratio = stock.info.get('debtToEquity')
+    revenue_growth = stock.info.get('revenueGrowth')
+    free_cash_flow = stock.info.get('freeCashflow')
+
+    FinancialData.objects.update_or_create(
+        ticker=symbol,
+        defaults={
+            'created_at': datetime.now().date(),
+            'market_cap': market_cap,
+            'enterprise_value': enterprise_value,
+            'trailing_pe': trailing_pe,
+            'forward_pe': forward_pe,
+            'peg_ratio': peg_ratio,
+            'price_sales': price_sales,
+            'price_book': price_book,
+            'ev_revenue': ev_revenue,
+            'ev_ebitda': ev_ebitda,
+            'profit_margin': profit_margin,
+            'return_on_assets': return_on_assets,
+            'return_on_equity': return_on_equity,
+            'revenue': revenue,
+            'net_income': net_income,
+            'diluted_eps': diluted_eps,
+            'total_cash': total_cash,
+            'debt_to_equity': debt_to_equity,
+            'levered_free_cash_flow': levered_free_cash_flow,
+            'earnings_per_share': earnings_per_share,
+            'price_to_earnings_ratio': price_to_earnings_ratio,
+            'dividend_yield': dividend_yield,
+            'book_value': book_value,
+            'debt_to_equity_ratio': debt_to_equity_ratio,
+            'revenue_growth': revenue_growth,
+            'free_cash_flow': free_cash_flow
+        }
+    )
+
+def save_all_sp500_metrics():
+
+    most_recent_date = FinancialData.objects.all().order_by('id').first().created_at
+    # Check if today's date is the most recent date in the CSV
+    date_today = datetime.now().date()
+    try:
+        if most_recent_date:
+            date_diff = date_today - most_recent_date.date()
+            if date_diff.days <= 1:
+                logger.info("The financial data is already up to date or within one day of the most recent date.")
+                return
+            else:
+                logger.info("Updating stock data...")
+    except AttributeError:
+        pass
+    
+    tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
+    tickers = tickers.Symbol.to_list()
+
+    # Remove specific tickers
+    tickers_to_remove = ['BF.B', 'BRK.B', 'BF-B', 'BRK-B']
+    tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
+
+    for ticker in tickers:
+        try:
+            get_financial_data(ticker)
+        except Exception as e:
+            print(f"Could not retrieve data for {ticker}: {e}")

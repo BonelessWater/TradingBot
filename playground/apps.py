@@ -10,8 +10,9 @@ class PlaygroundConfig(AppConfig):
     verbose_name = "Playground Application"
 
     def ready(self):
-        from .tasks import save_data  # Import your task function here
+        from .tasks import save_data, save_all_sp500_metrics  # Import your task function here
         self.start_scheduler(save_data)
+        self.start_scheduler(save_all_sp500_metrics)
 
     def start_scheduler(self, task_function):
         scheduler = BackgroundScheduler()
