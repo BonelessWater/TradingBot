@@ -180,9 +180,12 @@ def get_covariance():
 
     return S2
 
-def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var):
-    min_return = 0.0
-    min_var = 0.8
+def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_return, min_var):
+
+    # Error checkers
+    error = False
+    message = ''
+
     horizon = np.sqrt(horizon)
 
     z = NormalDist().inv_cdf(confidence_level)
@@ -267,13 +270,19 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
 
     # Minimum risk for a given return
     ef_risk = EfficientFrontier(mu2[tickers_risk], risk_cov)
-    weights_risk = ef_risk.efficient_return(target_return=min_return)
+    try:
+        weights_risk = ef_risk.efficient_return(target_return=min_return)
+    except ValueError as e:
+        return True, e, 0,0,0,0,0,0
     ef_risk.clean_weights()
 
     # Maximum return for a given risk
     ef_return = EfficientFrontier(mu2[tickers_return], return_cov)
     
-    weights_return = ef_return.efficient_risk(target_volatility=min_var)
+    try: 
+        weights_return = ef_return.efficient_risk(target_volatility=min_var)
+    except ValueError as e:
+        return True, e, 0,0,0,0,0,0
     ef_return.clean_weights()
 
     ef_sharpe.portfolio_performance(verbose=True)
@@ -342,7 +351,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     risk_data = json.dumps(data_dict_risk)
     return_data = json.dumps(data_dict_return)
     
-    return sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict
+    return error, message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict
 
 def parameters(request):    
     if request.method == 'POST':
@@ -354,12 +363,13 @@ def parameters(request):
             horizon = parameters.cleaned_data['horizon']
             confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
+            min_return = parameters.cleaned_data['min_return']
             
-            sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_var)
-
+            error, error_message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_return, min_var)
+            if error == True:
+                return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
             return render(request, 'parameters.html', {'is_post': True, 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
-
-    return render(request, 'parameters.html', {'is_post': False})
+    return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
 
 def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator):
     df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])

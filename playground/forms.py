@@ -6,6 +6,7 @@ class ParametersForm(forms.Form):
     horizon = forms.IntegerField(label='Time horizon (months)')
     confidence = forms.DecimalField(label='VaR confidence level')
     min_var = forms.DecimalField(label='Min VaR')
+    min_return = forms.DecimalField(label='Min Return')
 
 class ResearchForm(forms.Form):
     ticker = forms.CharField()

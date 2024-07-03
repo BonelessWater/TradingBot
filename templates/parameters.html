@@ -45,6 +45,13 @@ Parameters | Portfolio Builder
                 <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
+            <div class="input-field col s12">
+                <input placeholder="Minimum Return" id="min_return" type="text" class="validate black-text" name="min_return" value="{{ form.min_return.value|default_if_none:'' }}">
+                <label for="min_return" class="black-text">{{ form.min_return.label }}</label>
+                {% if form.min_return.errors %}
+                <div class="black-text">{{ form.min_return.errors }}</div>
+                {% endif %}
+            </div>
             <button class="btn waves-effect waves-light" type="submit" name="action">Submit</button>
         </div>
     </form>
@@ -330,6 +337,9 @@ Parameters | Portfolio Builder
                     <div class="card-content">
                         <span class="card-title">Portfolio Optimizer</span>
                         <p>Use the button on the bottom right to construct your portfolio according to your needs</p>
+                        {% if error %}
+                            <h6 class="center red-text">{{ message }}</h6>
+                        {% endif %}
                     </div>
                 </div>
             </div>
