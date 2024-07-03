@@ -424,7 +424,7 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     # Calculate Simple Moving Average (SMA)
     try:
-        df['SMA'] = df['close_price'].rolling(window=sma if isinstance(sma, int) else 0).mean().fillna(df['close_price'])
+        df['SMA'] = df['close_price'].rolling(window=sma).mean().fillna(df['close_price'])
     except Exception as e:
         df['SMA'] = 0
         print(f"Error calculating SMA: {e}")

@@ -126,7 +126,13 @@ Research | Portfolio Builder
     <div class="col s12">
         <div class="row">
             <div id="dateRangeDisplay" style="text-align:center; margin-top:10px; font-size:16px;"></div>
+
             <canvas id="myChart"></canvas>
+
+            <div style="position: relative; width: 100%; height: 20px; background-color: #f1f1f1;">
+                <div id="rangeBar" style="height: 100%; background: #FF6384; position: absolute;"></div>
+            </div>
+            <h6 class="center" id="dataInfo"></h6>
         </div>
     </div>
 
@@ -217,11 +223,18 @@ Research | Portfolio Builder
     document.getElementById('MACDCheckbox').dispatchEvent(new Event('change'));
     document.getElementById('StochasticCheckbox').dispatchEvent(new Event('change'));
 });
-
     
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
+
+    const rangeBar = document.getElementById('rangeBar');
+    const dataInfo = document.getElementById('dataInfo'); // Element to show data info
+    const dates = chartData.date.map(date => new Date(date)); // Assuming chartData.date contains date strings
+    const startTime = dates[0].getTime(); // Start time of the chart data
+    const endTime = dates[dates.length - 1].getTime(); // End time of the chart data
+    const totalDuration = endTime - startTime; // Total duration in milliseconds
+    const totalDataPoints = dates.length; // Total number of data points
 
     // Define a color mapping for each dataset
     const colorMapping = {
@@ -283,11 +296,21 @@ Research | Portfolio Builder
                             pinch: { enabled: true },
                             mode: 'x',
                             onZoomComplete: function({chart}) {
-                                let range = chart.scales.x.max - chart.scales.x.min;
+                                const min = chart.scales.x.min;
+                                const max = chart.scales.x.max;
+                                const range = max - min;
+                                const leftPercent = ((min - startTime) / totalDuration) * 100;
+
+                                const widthPercent = (range / totalDuration) * 100;
+                                rangeBar.style.left = leftPercent + '%';
+                                rangeBar.style.width = widthPercent + '%';
                                 let maxRange = 3 * 365 * 24 * 60 * 60 * 1000; // Max range of 3 years in milliseconds
                                 if (range > maxRange) {
                                     chart.resetZoom(); // Reset zoom if zoomed out beyond 3 years
                                 }
+                                // Calculate visible data points
+                                const visibleDataPoints = dates.filter(date => date.getTime() >= min && date.getTime() <= max).length;
+                                dataInfo.innerHTML = `${visibleDataPoints} days`;
                             }
                         },
                         pan: {
@@ -312,6 +335,9 @@ Research | Portfolio Builder
         };
 
         var myChart = new Chart(ctx, config);
+        myChart.update();
     }
+    
+    
 </script>
 {% endblock content %}
