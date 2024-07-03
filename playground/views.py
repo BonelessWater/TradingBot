@@ -82,6 +82,37 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
 
     return valuation, finance, data
 
+def get_sp500_data():
+    
+    # Define the ticker symbol for the S&P 500
+    ticker_symbol = '^GSPC'
+    
+    # Calculate the start and end dates
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=3 * 365)  # roughly 3 years
+    
+    try:
+        # Fetch the data using yfinance
+        sp500_data = yf.download(ticker_symbol, start=start_date, end=end_date)
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    
+    # Calculate the moving average and handle NaN values
+    sp500_data['50_MA'] = sp500_data['Close'].rolling(window=50).mean()
+    sp500_data['50_MA'] = sp500_data['50_MA'].fillna(sp500_data['Close'])
+
+    # Ensure the index is of datetime type
+    sp500_data.index = pd.to_datetime(sp500_data.index)
+
+    # Prepare the dictionary
+    data_dict = {
+        'date': [date.strftime('%Y-%m-%d') for date in sp500_data.index],
+        'Close Price': sp500_data['Close'].tolist(), 
+        'Moving Average': sp500_data['50_MA'].tolist() 
+    }
+    return json.dumps(data_dict)
+
 def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
