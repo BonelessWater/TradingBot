@@ -60,146 +60,148 @@ Parameters | Portfolio Builder
 
 {% block content %}
     {% if is_post %}
-    <!--Sharpe-->
-    <div class="col s12">
-        <div class="row">
-            <canvas id="myChartSharpe"></canvas>
-            <h6>Sharpe Ratio:</h6>
-            <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
-        </div>
-    </div>
-    <div>
-        <div class="card">
-            <div class="card-content">
-                <div>
-                    <h5 class="center card-title">Best Portfolio by Sharpe Ratio</h5>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Percentage</th>
-                            <th>Investment Amount</th>
-                            <th>Market Cap</th>
-                            <th>Enterprise Value</th>
-                            <th>Trailing P/E</th>
-                            <th>Forward P/E</th>
-                            <th>PEG Ratio</th>
-                            <th>Price Sales</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key, item in sharpe_dict.financial_data_sharpe.items %}
-                        <tr>
-                            <td>{{ item.ticker }}</td>
-                            <td>{{ item.percentage }}</td>
-                            <td>{{ item.investmentamount }}</td>
-                            <td>{{ item.marketcap }}</td>
-                            <td>{{ item.enterprisevalue }}</td>
-                            <td>{{ item.trailingpe }}</td>
-                            <td>{{ item.forwardpe }}</td>
-                            <td>{{ item.pegratio }}</td>
-                            <td>{{ item.pricesales }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="container">
+        <!--Sharpe-->
+        <div class="col s12">
+            <div class="row">
+                <canvas id="myChartSharpe"></canvas>
+                <h6>Sharpe Ratio:</h6>
+                <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
             </div>
         </div>
-    </div>
-    <!--Risk-->
-    <div class="col s12">
-        <div class="row">
-            <canvas id="myChartRisk"></canvas>
-            <h6>Sharpe Ratio:</h6>
-            <div id="colorScaleBarRisk" class="color-scale-bar"></div>
-        </div>
-    </div>
-    <div>
-        <div class="card">
-            <div class="card-content">
-                <div>
-                    <h5 class="center card-title">Best Portfolio by Risk</h5>
+        <div>
+            <div class="card">
+                <div class="card-content">
+                    <div>
+                        <h5 class="center card-title">Best Portfolio by Sharpe Ratio</h5>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Percentage</th>
+                                <th>Investment Amount</th>
+                                <th>Market Cap</th>
+                                <th>Enterprise Value</th>
+                                <th>Trailing P/E</th>
+                                <th>Forward P/E</th>
+                                <th>PEG Ratio</th>
+                                <th>Price Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, item in sharpe_dict.financial_data_sharpe.items %}
+                            <tr>
+                                <td>{{ item.ticker }}</td>
+                                <td>{{ item.percentage }}</td>
+                                <td>{{ item.investmentamount }}</td>
+                                <td>{{ item.marketcap }}</td>
+                                <td>{{ item.enterprisevalue }}</td>
+                                <td>{{ item.trailingpe }}</td>
+                                <td>{{ item.forwardpe }}</td>
+                                <td>{{ item.pegratio }}</td>
+                                <td>{{ item.pricesales }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Percentage</th>
-                            <th>Investment Amount</th>
-                            <th>Market Cap</th>
-                            <th>Enterprise Value</th>
-                            <th>Trailing P/E</th>
-                            <th>Forward P/E</th>
-                            <th>PEG Ratio</th>
-                            <th>Price Sales</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key, item in risk_dict.financial_data_risk.items %}
-                        <tr>
-                            <td>{{ item.ticker }}</td>
-                            <td>{{ item.percentage }}</td>
-                            <td>{{ item.investmentamount }}</td>
-                            <td>{{ item.marketcap }}</td>
-                            <td>{{ item.enterprisevalue }}</td>
-                            <td>{{ item.trailingpe }}</td>
-                            <td>{{ item.forwardpe }}</td>
-                            <td>{{ item.pegratio }}</td>
-                            <td>{{ item.pricesales }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
             </div>
         </div>
-    </div>
-
-    <!--Returns-->
-
-    <div class="col s12">
-        <div class="row">
-            <canvas id="myChartReturn"></canvas>
-            <h6>Sharpe Ratio:</h6>
-            <div id="colorScaleBarReturn" class="color-scale-bar"></div>
+        <!--Risk-->
+        <div class="col s12">
+            <div class="row">
+                <canvas id="myChartRisk"></canvas>
+                <h6>Sharpe Ratio:</h6>
+                <div id="colorScaleBarRisk" class="color-scale-bar"></div>
+            </div>
         </div>
-    </div>
-    <div>
-        <div class="card">
-            <div class="card-content">
-                <div>
-                    <h5 class="center card-title">Best Portfolio by Returns</h5>
+        <div>
+            <div class="card">
+                <div class="card-content">
+                    <div>
+                        <h5 class="center card-title">Best Portfolio by Risk</h5>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Percentage</th>
+                                <th>Investment Amount</th>
+                                <th>Market Cap</th>
+                                <th>Enterprise Value</th>
+                                <th>Trailing P/E</th>
+                                <th>Forward P/E</th>
+                                <th>PEG Ratio</th>
+                                <th>Price Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, item in risk_dict.financial_data_risk.items %}
+                            <tr>
+                                <td>{{ item.ticker }}</td>
+                                <td>{{ item.percentage }}</td>
+                                <td>{{ item.investmentamount }}</td>
+                                <td>{{ item.marketcap }}</td>
+                                <td>{{ item.enterprisevalue }}</td>
+                                <td>{{ item.trailingpe }}</td>
+                                <td>{{ item.forwardpe }}</td>
+                                <td>{{ item.pegratio }}</td>
+                                <td>{{ item.pricesales }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Percentage</th>
-                            <th>Investment Amount</th>
-                            <th>Market Cap</th>
-                            <th>Enterprise Value</th>
-                            <th>Trailing P/E</th>
-                            <th>Forward P/E</th>
-                            <th>PEG Ratio</th>
-                            <th>Price/Sales</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for key, item in return_dict.financial_data_return.items %}
-                        <tr>
-                            <td>{{ item.ticker }}</td>
-                            <td>{{ item.percentage }}</td>
-                            <td>{{ item.investmentamount }}</td>
-                            <td>{{ item.marketcap }}</td>
-                            <td>{{ item.enterprisevalue }}</td>
-                            <td>{{ item.trailingpe }}</td>
-                            <td>{{ item.forwardpe }}</td>
-                            <td>{{ item.pegratio }}</td>
-                            <td>{{ item.pricesales }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            </div>
+        </div>
+
+        <!--Returns-->
+
+        <div class="col s12">
+            <div class="row">
+                <canvas id="myChartReturn"></canvas>
+                <h6>Sharpe Ratio:</h6>
+                <div id="colorScaleBarReturn" class="color-scale-bar"></div>
+            </div>
+        </div>
+        <div>
+            <div class="card">
+                <div class="card-content">
+                    <div>
+                        <h5 class="center card-title">Best Portfolio by Returns</h5>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Percentage</th>
+                                <th>Investment Amount</th>
+                                <th>Market Cap</th>
+                                <th>Enterprise Value</th>
+                                <th>Trailing P/E</th>
+                                <th>Forward P/E</th>
+                                <th>PEG Ratio</th>
+                                <th>Price/Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, item in return_dict.financial_data_return.items %}
+                            <tr>
+                                <td>{{ item.ticker }}</td>
+                                <td>{{ item.percentage }}</td>
+                                <td>{{ item.investmentamount }}</td>
+                                <td>{{ item.marketcap }}</td>
+                                <td>{{ item.enterprisevalue }}</td>
+                                <td>{{ item.trailingpe }}</td>
+                                <td>{{ item.forwardpe }}</td>
+                                <td>{{ item.pegratio }}</td>
+                                <td>{{ item.pricesales }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

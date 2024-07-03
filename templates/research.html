@@ -122,69 +122,70 @@ Research | Portfolio Builder
 {% endblock sidebar %}
 
 {% block content %}
-<div class="col s12">
+<div class="container">
+    <div class="col s12">
+        <div class="row">
+            <div id="dateRangeDisplay" style="text-align:center; margin-top:10px; font-size:16px;"></div>
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+
     <div class="row">
-        <canvas id="myChart"></canvas>
+        <div class="col s6">
+            <h5 class="left-align">Valuation Measures</h5>
+            <h6 class="right-align">Most recent</h6>
+
+            <div class="col s6">
+                <h6 class="left-align">Ticker</h6>
+                <h6 class="left-align">Market Cap</h6>
+                <h6 class="left-align">Enterprise Value</h6>
+                <h6 class="left-align">Trailing P/E</h6>
+                <h6 class="left-align">Forward P/E</h6>
+                <h6 class="left-align">PEG Ratio (5yr Expected)</h6>
+                <h6 class="left-align">Price/Sales (ttm)</h6>
+                <h6 class="left-align">Price/Bool (mrq)</h6>
+                <h6 class="left-align">Enterprise Value/Revenue</h6>
+                <h6 class="left-align">Enterprise Value/EBITDA</h6>
+                
+            </div>
+
+            <div class="col s6">
+                    {% for key, item in valuation.items %}
+                        <h6 class="right-align">{{ item }}</h6>
+                    {% endfor %}
+            </div>
+        </div>
+
+        <div class="col s6">
+            <h5 class="left-align">Financial Highlights</h5>
+            <h6 class="right-align">Most recent</h6>
+
+            <div class="col s6">
+                <h6 class="left-align">Profit Margin</h6>
+                <h6 class="left-align">Return on Assets (ttm)</h6>
+                <h6 class="left-align">Return on Equity (ttm)</h6>
+                <h6 class="left-align">Revenue (ttm)</h6>
+                <h6 class="left-align">Net Income Avi to Common (ttm)</h6>
+                <h6 class="left-align">Diluted EPS (ttm)</h6>
+                <h6 class="left-align">Total Cash (mrq)</h6>
+                <h6 class="left-align">Total Debt/Equity (mrq)</h6>
+                <h6 class="left-align">Levered Free Cash Flow (ttm)</h6>
+                
+            </div>
+
+            <div class="col s6">
+                    {% for key, item in finance.items %}
+                        <h6 class="right-align">{{ item }}</h6>
+                    {% endfor %}
+            </div>
+        </div> 
     </div>
-</div>
-
-<div class="row">
-    <div class="col s6">
-        <h5 class="left-align">Valuation Measures</h5>
-        <h6 class="right-align">Most recent</h6>
-
-        <div class="col s6">
-            <h6 class="left-align">Ticker</h6>
-            <h6 class="left-align">Market Cap</h6>
-            <h6 class="left-align">Enterprise Value</h6>
-            <h6 class="left-align">Trailing P/E</h6>
-            <h6 class="left-align">Forward P/E</h6>
-            <h6 class="left-align">PEG Ratio (5yr Expected)</h6>
-            <h6 class="left-align">Price/Sales (ttm)</h6>
-            <h6 class="left-align">Price/Bool (mrq)</h6>
-            <h6 class="left-align">Enterprise Value/Revenue</h6>
-            <h6 class="left-align">Enterprise Value/EBITDA</h6>
-            
-        </div>
-
-        <div class="col s6">
-                {% for key, item in valuation.items %}
-                    <h6 class="right-align">{{ item }}</h6>
-                {% endfor %}
-        </div>
-    </div>
-
-    <div class="col s6">
-        <h5 class="left-align">Financial Highlights</h5>
-        <h6 class="right-align">Most recent</h6>
-
-        <div class="col s6">
-            <h6 class="left-align">Profit Margin</h6>
-            <h6 class="left-align">Return on Assets (ttm)</h6>
-            <h6 class="left-align">Return on Equity (ttm)</h6>
-            <h6 class="left-align">Revenue (ttm)</h6>
-            <h6 class="left-align">Net Income Avi to Common (ttm)</h6>
-            <h6 class="left-align">Diluted EPS (ttm)</h6>
-            <h6 class="left-align">Total Cash (mrq)</h6>
-            <h6 class="left-align">Total Debt/Equity (mrq)</h6>
-            <h6 class="left-align">Levered Free Cash Flow (ttm)</h6>
-            
-        </div>
-
-        <div class="col s6">
-                {% for key, item in finance.items %}
-                    <h6 class="right-align">{{ item }}</h6>
-                {% endfor %}
-        </div>
-    </div>
-
-    
 </div>
 
 <div class="fixed-action-btn">
     <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
 </div>
-
+<script src="https://unpkg.com/chartjs-plugin-zoom"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
     var elems = document.querySelectorAll('select');
@@ -248,7 +249,6 @@ Research | Portfolio Builder
         // Add datasets for each key in chartData except 'date'
         for (let key in chartData) {
             if (chartData.hasOwnProperty(key) && key !== 'date') {
-                // Check if the value is not zero and is an array (assuming it's an array of numbers)
                 if (chartData[key] && Array.isArray(chartData[key]) && chartData[key].some(value => value !== 0)) {
                     datasets.push({
                         label: key,
@@ -266,26 +266,43 @@ Research | Portfolio Builder
 
         const config = {
             type: 'line',
-            data: {
-                datasets: datasets,
-            },
+            data: { datasets: datasets },
             options: {
                 plugins: {
                     title: {
                         display: true,
                         text: title,
-                        font: {
-                            size: 20
+                        font: { size: 20 }
+                    },
+                    zoom: {
+                        limits: {
+                            x: { min: chartData.date[0], max: chartData.date[chartData.date.length - 1] }, // Ensure x-axis does not zoom beyond data range
+                        },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'x',
+                            onZoomComplete: function({chart}) {
+                                let range = chart.scales.x.max - chart.scales.x.min;
+                                let maxRange = 3 * 365 * 24 * 60 * 60 * 1000; // Max range of 3 years in milliseconds
+                                if (range > maxRange) {
+                                    chart.resetZoom(); // Reset zoom if zoomed out beyond 3 years
+                                }
+                            }
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'x'
                         }
                     }
                 },
                 scales: {
                     x: {
                         type: 'time',
-                        time: {
-                            unit: 'day'
-                        },
-                        distribution: 'linear'
+                        time: { unit: 'day' },
+                        distribution: 'linear',
+                        bounds: 'data',
+                        min: chartData.date[Math.max(0, chartData.date.length - 365)], // Default to last one year of data
                     },
                     y: {
                         beginAtZero: true
@@ -295,8 +312,6 @@ Research | Portfolio Builder
         };
 
         var myChart = new Chart(ctx, config);
-    } else {
-        console.error('chartData.date is not defined or is not an array');
     }
 </script>
 {% endblock content %}
