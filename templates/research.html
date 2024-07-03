@@ -194,35 +194,35 @@ Research | Portfolio Builder
 <script src="https://unpkg.com/chartjs-plugin-zoom"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-    var elems = document.querySelectorAll('select');
-    M.FormSelect.init(elems);
+        var elems = document.querySelectorAll('select');
+        M.FormSelect.init(elems);
 
-    function toggleDropdown(checkboxId, dropdownId) {
-        document.getElementById(checkboxId).addEventListener('change', function() {
-            var dropdown = document.getElementById(dropdownId);
-            if (this.checked) {
-                dropdown.style.display = 'block';
-            } else {
-                dropdown.style.display = 'none';
-            }
-        });
-    }
+        function toggleDropdown(checkboxId, dropdownId) {
+            document.getElementById(checkboxId).addEventListener('change', function() {
+                var dropdown = document.getElementById(dropdownId);
+                if (this.checked) {
+                    dropdown.style.display = 'block';
+                } else {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
 
-    toggleDropdown('SMACheckBox', 'SMADropDown');
-    toggleDropdown('EMACheckBox', 'EMADropDown');
-    toggleDropdown('BollingerBandsCheckbox', 'BollingerBandsDropdown');
-    toggleDropdown('RSICheckbox', 'RSIDropdown');
-    toggleDropdown('MACDCheckbox', 'MACDDropdown');
-    toggleDropdown('StochasticCheckbox', 'StochasticDropdown');
+        toggleDropdown('SMACheckBox', 'SMADropDown');
+        toggleDropdown('EMACheckBox', 'EMADropDown');
+        toggleDropdown('BollingerBandsCheckbox', 'BollingerBandsDropdown');
+        toggleDropdown('RSICheckbox', 'RSIDropdown');
+        toggleDropdown('MACDCheckbox', 'MACDDropdown');
+        toggleDropdown('StochasticCheckbox', 'StochasticDropdown');
 
-    // Trigger change event for pre-selected checkboxes
-    document.getElementById('SMACheckBox').dispatchEvent(new Event('change'));
-    document.getElementById('EMACheckBox').dispatchEvent(new Event('change'));
-    document.getElementById('BollingerBandsCheckbox').dispatchEvent(new Event('change'));
-    document.getElementById('RSICheckbox').dispatchEvent(new Event('change'));
-    document.getElementById('MACDCheckbox').dispatchEvent(new Event('change'));
-    document.getElementById('StochasticCheckbox').dispatchEvent(new Event('change'));
-});
+        // Trigger change event for pre-selected checkboxes
+        document.getElementById('SMACheckBox').dispatchEvent(new Event('change'));
+        document.getElementById('EMACheckBox').dispatchEvent(new Event('change'));
+        document.getElementById('BollingerBandsCheckbox').dispatchEvent(new Event('change'));
+        document.getElementById('RSICheckbox').dispatchEvent(new Event('change'));
+        document.getElementById('MACDCheckbox').dispatchEvent(new Event('change'));
+        document.getElementById('StochasticCheckbox').dispatchEvent(new Event('change'));
+    });
     
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
@@ -269,7 +269,7 @@ Research | Portfolio Builder
                         backgroundColor: colorMapping[key] || 'rgba(0, 0, 0, 0.1)', // Fallback color
                         borderColor: colorMapping[key] || 'rgba(0, 0, 0, 1)', // Fallback color
                         data: chartData[key].map((value, index) => ({ x: chartData.date[index], y: value })),
-                        borderWidth: 1,
+                        borderWidth: 3,
                         fill: false,
                         pointStyle: false,
                         pointRadius: 0,

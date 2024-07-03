@@ -120,7 +120,7 @@ def g_mean(x):
 def get_covariance():
     current_time = datetime.now().time()
     start_time = time(0, 0)  # 12:00 AM
-    end_time = time(0, 30)  # 12:30 AM
+    end_time = time(0, 5)  # 12:05 AM
 
     # Query all symbols from the database
     tickers = SP500Ticker.objects.all().values_list('symbol', flat=True)
@@ -136,7 +136,7 @@ def get_covariance():
 
     # Check if current time is between 12:00 AM and 12:30 AM
     if current_time >= start_time and current_time <= end_time:
-        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:30 AM UTC")
+        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
 
     # Check if the data already exists for today
     covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
@@ -151,14 +151,13 @@ def get_covariance():
     # If not during the restricted time and no entry was found or deserialization failed
     csv_file_path = 'tickers_prices.csv'
     tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
-
+    #print(tickers_price_df)
     # Ensure DataFrame is not empty
     if tickers_price_df.empty:
         raise ValueError("Tickers price DataFrame is empty.")
 
     # Handle missing values by dropping rows with any missing values
-    tickers_price_df.dropna(inplace=True)
-
+    tickers_price_df.fillna(value=0, inplace=True)  # Fills all NaNs with 0
     # Ensure there are no missing values after dropping
     if tickers_price_df.isnull().values.any():
         raise ValueError("Tickers price DataFrame contains missing values even after dropping.")
@@ -260,7 +259,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     mu2.name = None
     mu2 = mu2.fillna(0)
 
-    S2_symmetric = (S2 + S2.T) / 2
+    S2 = (S2 + S2.T) / 2
     
     tickers_daily_volatility_df = np.log(1 + tickers_price_df.pct_change(fill_method=None))
     tickers_individual_volatility_df = pd.DataFrame(data=np.std(tickers_daily_volatility_df, axis=0), columns=['Individual Volatility'])
@@ -291,6 +290,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     stdev_expon_sort.drop(stdev_expon_sort.tail(len(stdev_expon_sort)-number_of_stocks).index,inplace = True)
 
     tickers_risk = stdev_expon_sort.index.tolist()
+    print(tickers_risk)
 
     risk_cov = exp_cov(tickers_price_df[tickers_risk], frequency = len(tickers_price_df), span = len(tickers_price_df), log_returns = True)
     
@@ -334,31 +334,34 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     ef_risk_plot = EfficientFrontier(mu2[tickers_risk], risk_cov)
     ef_return_plot = EfficientFrontier(mu2[tickers_return], return_cov)
 
+    risk_free_rate = 0.105 # defined by the avg return of the sp500
   
     # Generate random portfolios
     n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_sharpe_plot.n_assets), n_samples)
     rets = w.dot(ef_sharpe_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_sharpe_plot.cov_matrix @ w.T))
-    sharpes = rets / stds
+    sharpes = (rets - 0.105) / stds
     # Prepare the dictionary
     data_dict_sharpe = {
         'x': stds.tolist(), 
         'y': rets.tolist(), 
-        'sharpe': sharpes.tolist() 
+        'sharpe': sharpes.tolist(),
+        'weights': w.tolist()
     }
-    
+
     # Generate random portfolios
     n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_risk_plot.n_assets), n_samples)
     rets = w.dot(ef_risk_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_risk_plot.cov_matrix @ w.T))
-    sharpes = rets / stds
+    sharpes = (rets - risk_free_rate) / stds
     # Prepare the dictionary
     data_dict_risk = {
         'x': stds.tolist(), 
         'y': rets.tolist(), 
-        'sharpe': sharpes.tolist() 
+        'sharpe': sharpes.tolist(),
+        'weights': w.tolist()
     }
     
     # Generate random portfolios
@@ -366,12 +369,13 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     w = np.random.dirichlet(np.ones(ef_return_plot.n_assets), n_samples)
     rets = w.dot(ef_return_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_return_plot.cov_matrix @ w.T))
-    sharpes = rets / stds
+    sharpes = (rets - risk_free_rate) / stds
     # Prepare the dictionary
     data_dict_return = {
         'x': stds.tolist(), 
         'y': rets.tolist(), 
-        'sharpe': sharpes.tolist() 
+        'sharpe': sharpes.tolist(),
+        'weights': w.tolist()
     }
 
     financial_data_sharpe = {}
@@ -384,9 +388,9 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     for symbol in weights_return:
         valuation_return, finance_return, financial_data_return[symbol] = get_financial_data(symbol, investment_amount, weights_return[symbol])
 
-    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data_sharpe': financial_data_sharpe}
-    risk_dict = {'valuation_risk': valuation_risk, 'finance_risk': finance_risk, 'financial_data_risk': financial_data_risk}
-    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data_return': financial_data_return}
+    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data_sharpe': financial_data_sharpe, 'tickers': json.dumps(tickers_sharpe)}
+    risk_dict = {'valuation_risk': valuation_risk, 'finance_risk': finance_risk, 'financial_data_risk': financial_data_risk, 'tickers': json.dumps(tickers_risk)}
+    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data_return': financial_data_return, 'tickers': json.dumps(tickers_return)}
 
     sharpe_data = json.dumps(data_dict_sharpe)
     risk_data = json.dumps(data_dict_risk)

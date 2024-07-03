@@ -86,7 +86,7 @@ Parameters | Portfolio Builder
                                 <th>Trailing P/E</th>
                                 <th>Forward P/E</th>
                                 <th>PEG Ratio</th>
-                                <th>Price Sales</th>
+                                <th>Price/Sales</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -133,7 +133,7 @@ Parameters | Portfolio Builder
                                 <th>Trailing P/E</th>
                                 <th>Forward P/E</th>
                                 <th>PEG Ratio</th>
-                                <th>Price Sales</th>
+                                <th>Price/Sales</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -211,15 +211,15 @@ Parameters | Portfolio Builder
         var chartType = '{{ chart_type|escapejs }}';
 
         document.addEventListener('DOMContentLoaded', function () {
-
+            
             function interpolateColor(value, min, max) {
                 scale = d3.scaleSequential(d3.interpolateViridis).domain([min, max]);
                 return scale(value);
             }
 
-            function createChart(chartData, id, colorbar){
+            function createChart(chartData, identifier, colorbar){
                 var pointBackgroundColors = [];
-                let ctx = document.getElementById(id).getContext('2d');   
+                let ctx = document.getElementById(identifier).getContext('2d');
 
                 // Calculate min and max Sharpe ratios
                 minSharpe = Math.min(...chartData.sharpe);
@@ -234,6 +234,7 @@ Parameters | Portfolio Builder
                         backgroundColor: "#000000",
                         borderColor: "#000000",
                         pointRadius: 3,
+                        label: chartData.label[i]
                     };
                 });
 
@@ -275,6 +276,18 @@ Parameters | Portfolio Builder
                             },
                             legend: {
                                 display: false,
+                            }, tooltip: {
+                                enabled: true,
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        let dataset = tooltipItem.dataset;
+                                        let point = dataset.data[tooltipItem.dataIndex];
+                                        let labelX = 'Risk: ' + point.x.toFixed(2);
+                                        let labelY = 'Return: ' + point.y.toFixed(2);
+                                        let labelInfo = 'Info: ' + point.label;
+                                        return [labelX, labelY, labelInfo];
+                                    }
+                                }
                             }
                         }
                     }
@@ -310,7 +323,6 @@ Parameters | Portfolio Builder
                 maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
                 colorScaleBar.appendChild(maxLabel);
             }
-        
 
         var id_sharpe = 'myChartSharpe';
         var color_bar_sharpe = 'colorScaleBarSharpe';
@@ -320,7 +332,24 @@ Parameters | Portfolio Builder
         var color_bar_return = 'colorScaleBarReturn';
 
         let total_data = [JSON.parse('{{ sharpe_data|escapejs }}'), JSON.parse('{{ risk_data|escapejs }}'), JSON.parse('{{ return_data|escapejs }}')]
+        let financial_info = [('{{ sharpe_dict.tickers|escapejs}}'), ('{{ risk_dict.tickers|escapejs}}'), ('{{ return_dict.tickers|escapejs}}')];
 
+        // Updating total_data with the zipped tickers and weights string
+        for (var i = 0; i < 3; i++) {
+            var data = total_data[i].weights;
+            var tickers = JSON.parse(financial_info[i]);
+
+            var labelstr = [];
+            for (var j = 0; j < data.length; j++) {
+                var temp = '';
+                for (var k = 0; k < tickers.length; k++){
+                    temp += `${tickers[k]}: ${String((data[j][k]).toFixed(2))} `;
+                }
+                labelstr.push(temp)
+            }
+            total_data[i].label = labelstr;
+        }
+        
         createChart(total_data[0], id_sharpe, color_bar_sharpe);
         createChart(total_data[1], id_risk, color_bar_risk);
         createChart(total_data[2], id_return, color_bar_return);
