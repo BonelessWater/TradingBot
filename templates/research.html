@@ -129,7 +129,7 @@ Research | Portfolio Builder
 
             <canvas id="myChart"></canvas>
 
-            <div style="position: relative; width: 100%; height: 20px; background-color: #f1f1f1;">
+            <div id="barContainer" style="position: relative; width: 100%; height: 20px; background-color: #f1f1f1;">
                 <div id="rangeBar" style="height: 100%; background: #FF6384; position: absolute;"></div>
             </div>
             <h6 class="center" id="dataInfo"></h6>
@@ -227,8 +227,9 @@ Research | Portfolio Builder
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
-
+    
     const rangeBar = document.getElementById('rangeBar');
+    const barContainer = document.getElementById('barContainer');
     const dataInfo = document.getElementById('dataInfo'); // Element to show data info
     const dates = chartData.date.map(date => new Date(date)); // Assuming chartData.date contains date strings
     const startTime = dates[0].getTime(); // Start time of the chart data
@@ -338,6 +339,58 @@ Research | Portfolio Builder
         myChart.update();
     }
     
-    
+    let isDragging = false;
+    let startClientX;
+
+    rangeBar.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        startClientX = e.clientX;
+        e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', function(e) {
+        if (isDragging) {
+            const dx = e.clientX - startClientX;
+            const proportionMove = dx / barContainer.offsetWidth;
+            const dateShift = proportionMove * totalDuration;
+
+            // Calculate new boundaries
+            let newMin = myChart.scales.x.min + dateShift;
+            let newMax = myChart.scales.x.max + dateShift;
+
+            // Prevent dragging beyond the available data range
+            if (newMin < startTime) {
+                newMin = startTime;
+                newMax = startTime + (myChart.scales.x.max - myChart.scales.x.min);
+            } else if (newMax > endTime) {
+                newMax = endTime;
+                newMin = endTime - (myChart.scales.x.max - myChart.scales.x.min);
+            }
+
+            // Apply the new limits
+            myChart.options.scales.x.min = newMin;
+            myChart.options.scales.x.max = newMax;
+            myChart.update();
+
+            startClientX = e.clientX; // Update the start x position for the next move
+        }
+        updateRangeBar();
+    });
+
+    window.addEventListener('mouseup', function() {
+        isDragging = false;
+    });
+
+    // The initial setup for the range bar
+    function updateRangeBar() {
+        const min = myChart.scales.x.min;
+        const max = myChart.scales.x.max;
+        const range = max - min;
+        const leftPercent = ((min - startTime) / totalDuration) * 100;
+        const widthPercent = (range / totalDuration) * 100;
+        rangeBar.style.left = `${leftPercent}%`;
+        rangeBar.style.width = `${widthPercent}%`;
+    }
+        
 </script>
 {% endblock content %}
