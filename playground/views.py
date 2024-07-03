@@ -1,6 +1,5 @@
-from django.shortcuts import render, get_object_or_404
-from django.http import HttpResponse, JsonResponse
-import logging
+from django.shortcuts import render
+from django.http import HttpResponse
 from .forms import ParametersForm, ResearchForm
 from .models import CovarianceData, SP500Ticker, FinancialData
 import yfinance as yf
@@ -14,6 +13,7 @@ from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date, time
 from statistics import NormalDist
 from datetime import datetime, timedelta
+import decimal
 
 def main(request):
     #CovarianceData.flush()
@@ -186,8 +186,49 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     error = False
     message = ''
 
-    horizon = np.sqrt(horizon)
+    if not isinstance(investment_amount, decimal.Decimal):
+        message = 'Your investment amount should be a number'
+        return True, message, 0,0,0,0,0,0
+    elif type(number_of_stocks) != int:
+        message = 'Your number of stocks should be a whole number'
+        return True, message, 0,0,0,0,0,0
+    elif type(horizon) != int or type(horizon) == float:
+        message = 'Your investment horizon should be a number'
+        return True, message, 0,0,0,0,0,0
 
+    horizon = round(horizon)
+
+    if confidence_level < 0 or 1 < confidence_level:
+        message = 'Your confidence level should be a number between 0 and 1'
+        return True, message, 0,0,0,0,0,0
+    elif investment_amount < 0:
+        message = 'You must invest more than one unit'
+        return True, message, 0,0,0,0,0,0
+    elif number_of_stocks <= 0:
+        message = 'You must build your portfolio with more than one stock'
+        return True, message, 0,0,0,0,0,0
+    elif number_of_stocks > 50:
+        message = 'You have chosen too many stocks, just invest in the sp500 at that point'
+        return True, message, 0,0,0,0,0,0
+    elif horizon <= 0:
+        message = 'What are you trying to look into the past? Choose a larger horizon'
+        return True, message, 0,0,0,0,0,0
+    
+    confidence_level = float(confidence_level)
+
+    try:
+        min_return = float(min_return)
+    except ValueError:
+        message = 'Target return should be a number'
+        return True, message, 0,0,0,0,0,0
+    try:
+        min_var = float(min_var)
+    except ValueError:
+        message = 'Target volatility should be a number'
+        return True, message, 0,0,0,0,0,0
+    
+    horizon = np.sqrt(horizon)
+    
     z = NormalDist().inv_cdf(confidence_level)
 
     date_today = date.today()
@@ -368,8 +409,9 @@ def parameters(request):
             error, error_message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_return, min_var)
             if error == True:
                 return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
-            return render(request, 'parameters.html', {'is_post': True, 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
-    return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
+            return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
+    error_message = ''
+    return render(request, 'parameters.html', {'is_post': False, 'error': False, 'message': error_message})
 
 def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator):
     df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])

@@ -39,14 +39,14 @@ Parameters | Portfolio Builder
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Minimum Volatility" id="min_var" type="text" class="validate black-text" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
+                <input placeholder="Target Volatility" id="min_var" type="text" class="validate black-text" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
                 <label for="min_var" class="black-text">{{ form.min_var.label }}</label>
                 {% if form.min_var.errors %}
                 <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Minimum Return" id="min_return" type="text" class="validate black-text" name="min_return" value="{{ form.min_return.value|default_if_none:'' }}">
+                <input placeholder="Target Return" id="min_return" type="text" class="validate black-text" name="min_return" value="{{ form.min_return.value|default_if_none:'' }}">
                 <label for="min_return" class="black-text">{{ form.min_return.label }}</label>
                 {% if form.min_return.errors %}
                 <div class="black-text">{{ form.min_return.errors }}</div>
@@ -181,7 +181,7 @@ Parameters | Portfolio Builder
                             <th>Trailing P/E</th>
                             <th>Forward P/E</th>
                             <th>PEG Ratio</th>
-                            <th>Price Sales</th>
+                            <th>Price/Sales</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -203,11 +203,7 @@ Parameters | Portfolio Builder
             </div>
         </div>
     </div>
-
-    <div class="fixed-action-btn">
-        <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
-    </div>
-
+    
     <script>
 
         var chartType = '{{ chart_type|escapejs }}';
@@ -336,17 +332,33 @@ Parameters | Portfolio Builder
                 <div class="card">
                     <div class="card-content">
                         <span class="card-title">Portfolio Optimizer</span>
-                        <p>Use the button on the bottom right to construct your portfolio according to your needs</p>
+                        <p>Use the button on the bottom right to construct your portfolio according to your needs.</p>
                         {% if error %}
-                            <h6 class="center red-text">{{ message }}</h6>
+                            <div class="card-panel red lighten-4">
+                                <span class="red-text text-darken-4">{{ message }}</span>
+                            </div>
                         {% endif %}
+                        <div class="advice-section">
+                            <h6>Helpful Tips:</h6>
+                            <ul>
+                                <li>Pick a confidence level between 0 and 1.</li>
+                                <li>Try values of target volatility of 0.6 or greater.</li>
+                                <li>Try values of target returns of 0.3 or less.</li>
+                            </ul>
+                        </div>                        
+                    </div>
+                    <div class="card-action center">
+                        <button id="toggle-button" class="btn waves-effect waves-light red" type="submit" name="action">Construct Portfolio
+                            <i class="material-icons right">build</i>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="fixed-action-btn">
-        <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
-    </div>
+    
     {% endif %}
+    <div class="fixed-action-btn">
+        <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
+    </div>
 {% endblock content %}
