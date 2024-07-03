@@ -32,13 +32,6 @@ Parameters | Portfolio Builder
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Confidence Level" id="confidence" type="text" class="validate black-text" name="confidence" value="{{ form.confidence.value|default_if_none:'' }}">
-                <label for="confidence" class="black-text">{{ form.confidence.label }}</label>
-                {% if form.confidence.errors %}
-                <div class="black-text">{{ form.confidence.errors }}</div>
-                {% endif %}
-            </div>
-            <div class="input-field col s12">
                 <input placeholder="Target Volatility" id="min_var" type="text" class="validate black-text" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
                 <label for="min_var" class="black-text">{{ form.min_var.label }}</label>
                 {% if form.min_var.errors %}
@@ -65,7 +58,7 @@ Parameters | Portfolio Builder
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartSharpe"></canvas>
-                <h6>Sharpe Ratio:</h6>
+                <h6 class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
                 <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
             </div>
         </div>
@@ -112,7 +105,7 @@ Parameters | Portfolio Builder
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartRisk"></canvas>
-                <h6>Sharpe Ratio:</h6>
+                <h6 id="sharpeRatio" class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6> 
                 <div id="colorScaleBarRisk" class="color-scale-bar"></div>
             </div>
         </div>
@@ -161,7 +154,7 @@ Parameters | Portfolio Builder
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartReturn"></canvas>
-                <h6>Sharpe Ratio:</h6>
+                <h6 id="sharpeRatio" class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6> 
                 <div id="colorScaleBarReturn" class="color-scale-bar"></div>
             </div>
         </div>
@@ -211,7 +204,34 @@ Parameters | Portfolio Builder
         var chartType = '{{ chart_type|escapejs }}';
 
         document.addEventListener('DOMContentLoaded', function () {
-            
+            // Initialize tooltips
+            const tooltippedElements = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltippedElements);
+
+            const h6Element = document.getElementById('sharpeRatio');
+            const colorScaleBar = document.getElementById('colorScaleBarReturn');
+
+            // Simulate color scale bar loading
+            setTimeout(() => {
+                // Assume the color scale bar has been loaded
+                colorScaleBar.classList.add('loaded'); // Add a class to indicate it's loaded
+
+                // Now show the h6 element
+                h6Element.style.display = 'inline-block';
+            }, 2000); // Simulate a 2-second load time for the color scale bar
+
+            h6Element.addEventListener('mouseover', function () {
+                const rect = h6Element.getBoundingClientRect();
+                const tooltip = h6Element.dataset.tooltip;
+                M.toast({html: tooltip, displayLength: 2000});
+            });
+
+            h6Element.addEventListener('mouseout', function () {
+                const tooltips = document.querySelectorAll('.toast');
+                tooltips.forEach(tooltip => {
+                    M.Toast.getInstance(tooltip).dismiss();
+                });
+            });
             function interpolateColor(value, min, max) {
                 scale = d3.scaleSequential(d3.interpolateViridis).domain([min, max]);
                 return scale(value);

@@ -88,7 +88,7 @@ def get_financial_data(symbol):
     debt_to_equity_ratio = stock.info.get('debtToEquity')
     revenue_growth = stock.info.get('revenueGrowth')
     free_cash_flow = stock.info.get('freeCashflow')
-
+    
     FinancialData.objects.update_or_create(
         ticker=symbol,
         defaults={

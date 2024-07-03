@@ -4,7 +4,6 @@ class ParametersForm(forms.Form):
     amount = forms.DecimalField(label='Investment amount')
     amount_stocks = forms.IntegerField(label='Number of Stocks')
     horizon = forms.IntegerField(label='Time horizon (months)')
-    confidence = forms.DecimalField(label='VaR confidence level')
     min_var = forms.DecimalField(label='Target Volatity')
     min_return = forms.DecimalField(label='Target Returns')
 

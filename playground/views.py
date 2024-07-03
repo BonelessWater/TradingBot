@@ -179,8 +179,8 @@ def get_covariance():
 
     return S2
 
-def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_return, min_var):
-
+def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_var):
+    confidence_level = 0.999
     # Error checkers
     error = False
     message = ''
@@ -336,8 +336,8 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
 
     risk_free_rate = 0.105 # defined by the avg return of the sp500
   
+    n_samples = 500    
     # Generate random portfolios
-    n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_sharpe_plot.n_assets), n_samples)
     rets = w.dot(ef_sharpe_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_sharpe_plot.cov_matrix @ w.T))
@@ -351,7 +351,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     }
 
     # Generate random portfolios
-    n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_risk_plot.n_assets), n_samples)
     rets = w.dot(ef_risk_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_risk_plot.cov_matrix @ w.T))
@@ -365,7 +364,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level
     }
     
     # Generate random portfolios
-    n_samples = 1000
     w = np.random.dirichlet(np.ones(ef_return_plot.n_assets), n_samples)
     rets = w.dot(ef_return_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_return_plot.cov_matrix @ w.T))
@@ -406,11 +404,10 @@ def parameters(request):
             investment_amount = parameters.cleaned_data['amount']
             number_of_stocks = parameters.cleaned_data['amount_stocks']
             horizon = parameters.cleaned_data['horizon']
-            confidence_level = parameters.cleaned_data['confidence']
             min_var = parameters.cleaned_data['min_var']
             min_return = parameters.cleaned_data['min_return']
             
-            error, error_message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, confidence_level, min_return, min_var)
+            error, error_message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_var)
             if error == True:
                 return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
             return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
