@@ -165,6 +165,7 @@ def get_covariance():
     # Calculate covariance matrix
     try:
         S2 = exp_cov(tickers_price_df, frequency=tickers_price_df.shape[1], span=tickers_price_df.shape[1], log_returns=True)
+        S2 = (S2 + S2.T) / 2
         if S2.empty:
             raise ValueError("Calculated covariance matrix is empty.")
     except Exception as e:
@@ -179,7 +180,7 @@ def get_covariance():
 
     return S2
 
-def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_var):
+def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     confidence_level = 0.999
     # Error checkers
     error = False
@@ -187,44 +188,33 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
 
     if not isinstance(investment_amount, decimal.Decimal):
         message = 'Your investment amount should be a number'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif type(number_of_stocks) != int:
         message = 'Your number of stocks should be a whole number'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif type(horizon) != int or type(horizon) == float:
         message = 'Your investment horizon should be a number'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
 
     horizon = round(horizon)
 
     if confidence_level < 0 or 1 < confidence_level:
         message = 'Your confidence level should be a number between 0 and 1'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif investment_amount < 0:
         message = 'You must invest more than one unit'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif number_of_stocks <= 0:
         message = 'You must build your portfolio with more than one stock'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif number_of_stocks > 50:
         message = 'You have chosen too many stocks, just invest in the sp500 at that point'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     elif horizon <= 0:
         message = 'What are you trying to look into the past? Choose a larger horizon'
-        return True, message, 0,0,0,0,0,0
+        return True, message, 0,0,0,0
     
     confidence_level = float(confidence_level)
-
-    try:
-        min_return = float(min_return)
-    except ValueError:
-        message = 'Target return should be a number'
-        return True, message, 0,0,0,0,0,0
-    try:
-        min_var = float(min_var)
-    except ValueError:
-        message = 'Target volatility should be a number'
-        return True, message, 0,0,0,0,0,0
     
     horizon = np.sqrt(horizon)
     
@@ -232,14 +222,9 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
 
     date_today = date.today()
     past_date = date_today - timedelta(days=3 * 365)
-    
-    # Retrieve distinct and ordered ticker symbols from your Django model
-    #tickers = list(StockData.objects.values_list('symbol', flat=True).distinct().order_by('symbol'))
-    #df = yf.download(tickers, past_date, date_today, auto_adjust=True)['Close']
 
-    tickers = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    tickers = tickers.Symbol.to_list()
-
+    tickers = list(SP500Ticker.objects.all().values_list('symbol', flat=True))
+    print(tickers)
     # Remove specific tickers
     tickers_to_remove = ['BF.B', 'BRK.B', 'BF-B', 'BRK-B']
     tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
@@ -258,8 +243,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
 
     mu2.name = None
     mu2 = mu2.fillna(0)
-
-    S2 = (S2 + S2.T) / 2
     
     tickers_daily_volatility_df = np.log(1 + tickers_price_df.pct_change(fill_method=None))
     tickers_individual_volatility_df = pd.DataFrame(data=np.std(tickers_daily_volatility_df, axis=0), columns=['Individual Volatility'])
@@ -282,18 +265,12 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
         variance_expon_list.append(S2[i][i])
     stdev_expon_list = pd.Series(data = np.sqrt(variance_expon_list), index = tickers)
 
-
     variance_expon_df = pd.DataFrame(data = variance_expon_list, index = tickers, columns = ['Deviation'])
     stdev_expon_df = np.sqrt(variance_expon_df)
 
     stdev_expon_sort = stdev_expon_list.sort_values(ascending=True)
     stdev_expon_sort.drop(stdev_expon_sort.tail(len(stdev_expon_sort)-number_of_stocks).index,inplace = True)
 
-    tickers_risk = stdev_expon_sort.index.tolist()
-    print(tickers_risk)
-
-    risk_cov = exp_cov(tickers_price_df[tickers_risk], frequency = len(tickers_price_df), span = len(tickers_price_df), log_returns = True)
-    
     sharpe = mu2/stdev_expon_df['Deviation']
     sharpe_expon_df = pd.DataFrame(sharpe, columns = ['Sharpe Ratio'])
 
@@ -309,29 +286,19 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
     weights_sharpe = ef_sharpe.max_sharpe()
     ef_sharpe.clean_weights()
 
-    # Minimum risk for a given return
-    ef_risk = EfficientFrontier(mu2[tickers_risk], risk_cov)
-    try:
-        weights_risk = ef_risk.efficient_return(target_return=min_return)
-    except ValueError as e:
-        return True, e, 0,0,0,0,0,0
-    ef_risk.clean_weights()
-
     # Maximum return for a given risk
     ef_return = EfficientFrontier(mu2[tickers_return], return_cov)
     
     try: 
-        weights_return = ef_return.efficient_risk(target_volatility=min_var)
+        weights_return = ef_return.efficient_risk(target_volatility=float(min_var))
     except ValueError as e:
-        return True, e, 0,0,0,0,0,0
+        return True, e, 0,0,0,0
     ef_return.clean_weights()
 
     ef_sharpe.portfolio_performance(verbose=True)
-    ef_risk.portfolio_performance(verbose=True)
     ef_return.portfolio_performance(verbose=True)
 
     ef_sharpe_plot = EfficientFrontier(mu2[tickers_sharpe], sharpe_cov)
-    ef_risk_plot = EfficientFrontier(mu2[tickers_risk], risk_cov)
     ef_return_plot = EfficientFrontier(mu2[tickers_return], return_cov)
 
     risk_free_rate = 0.105 # defined by the avg return of the sp500
@@ -351,19 +318,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
     }
 
     # Generate random portfolios
-    w = np.random.dirichlet(np.ones(ef_risk_plot.n_assets), n_samples)
-    rets = w.dot(ef_risk_plot.expected_returns)
-    stds = np.sqrt(np.diag(w @ ef_risk_plot.cov_matrix @ w.T))
-    sharpes = (rets - risk_free_rate) / stds
-    # Prepare the dictionary
-    data_dict_risk = {
-        'x': stds.tolist(), 
-        'y': rets.tolist(), 
-        'sharpe': sharpes.tolist(),
-        'weights': w.tolist()
-    }
-    
-    # Generate random portfolios
     w = np.random.dirichlet(np.ones(ef_return_plot.n_assets), n_samples)
     rets = w.dot(ef_return_plot.expected_returns)
     stds = np.sqrt(np.diag(w @ ef_return_plot.cov_matrix @ w.T))
@@ -377,24 +331,19 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_
     }
 
     financial_data_sharpe = {}
-    financial_data_risk = {}
     financial_data_return = {}
     for symbol in weights_sharpe:
         valuation_sharpe, finance_sharpe, financial_data_sharpe[symbol] = get_financial_data(symbol, investment_amount, weights_sharpe[symbol])
-    for symbol in weights_risk:
-        valuation_risk, finance_risk, financial_data_risk[symbol] = get_financial_data(symbol, investment_amount, weights_risk[symbol])
     for symbol in weights_return:
         valuation_return, finance_return, financial_data_return[symbol] = get_financial_data(symbol, investment_amount, weights_return[symbol])
 
     sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data_sharpe': financial_data_sharpe, 'tickers': json.dumps(tickers_sharpe)}
-    risk_dict = {'valuation_risk': valuation_risk, 'finance_risk': finance_risk, 'financial_data_risk': financial_data_risk, 'tickers': json.dumps(tickers_risk)}
     return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data_return': financial_data_return, 'tickers': json.dumps(tickers_return)}
 
     sharpe_data = json.dumps(data_dict_sharpe)
-    risk_data = json.dumps(data_dict_risk)
     return_data = json.dumps(data_dict_return)
     
-    return error, message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict
+    return error, message, sharpe_data, sharpe_dict, return_data, return_dict
 
 def parameters(request):    
     if request.method == 'POST':
@@ -405,12 +354,11 @@ def parameters(request):
             number_of_stocks = parameters.cleaned_data['amount_stocks']
             horizon = parameters.cleaned_data['horizon']
             min_var = parameters.cleaned_data['min_var']
-            min_return = parameters.cleaned_data['min_return']
-            
-            error, error_message, sharpe_data, sharpe_dict, risk_data, risk_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_return, min_var)
+
+            error, error_message, sharpe_data, sharpe_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_var)
             if error == True:
                 return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
-            return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'risk_data': risk_data, 'risk_dict': risk_dict, 'return_data': return_data, 'return_dict': return_dict})
+            return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'return_data': return_data, 'return_dict': return_dict})
     error_message = ''
     return render(request, 'parameters.html', {'is_post': False, 'error': False, 'message': error_message})
 
@@ -513,8 +461,11 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
 def research(request):
     
-    tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
-    tickers = tickers_df.Symbol.to_list()
+    tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name')) # Query them together to not lose ordering
+    
+    tickers = json.dumps([item[0] for item in tickers_and_names])
+    names = json.dumps([item[1] for item in tickers_and_names])
+
     if request.method == 'POST':
         
         research_form = ResearchForm(request.POST)
@@ -530,11 +481,13 @@ def research(request):
             chart_data = get_stock_data(selected_ticker, sma_value, ema_value, rsi_value, bollinger_bands_value, macd_value, stochastic_value)
 
             valuation, finance, financial_data = get_financial_data(selected_ticker)
-            return render(request, 'research.html', {'tickers': tickers, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
+
+
+            return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
         else:
             print(research_form.errors) 
 
-    return render(request, 'research.html', {'tickers': tickers, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
+    return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
 
 def indicator(request):
     return render(request, 'indicator.html')

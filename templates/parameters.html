@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 {% block title %}
 Parameters | Portfolio Builder
 {% endblock title %}
@@ -38,13 +38,6 @@ Parameters | Portfolio Builder
                 <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
-            <div class="input-field col s12">
-                <input placeholder="Target Return" id="min_return" type="text" class="validate black-text" name="min_return" value="{{ form.min_return.value|default_if_none:'' }}">
-                <label for="min_return" class="black-text">{{ form.min_return.label }}</label>
-                {% if form.min_return.errors %}
-                <div class="black-text">{{ form.min_return.errors }}</div>
-                {% endif %}
-            </div>
             <button class="btn waves-effect waves-light" type="submit" name="action">Submit</button>
         </div>
     </form>
@@ -72,8 +65,8 @@ Parameters | Portfolio Builder
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Percentage</th>
-                                <th>Investment Amount</th>
+                                <th>Investment %</th>
+                                <th>Investment Amt.</th>
                                 <th>Market Cap</th>
                                 <th>Enterprise Value</th>
                                 <th>Trailing P/E</th>
@@ -85,15 +78,15 @@ Parameters | Portfolio Builder
                         <tbody>
                             {% for key, item in sharpe_dict.financial_data_sharpe.items %}
                             <tr>
-                                <td>{{ item.ticker }}</td>
-                                <td>{{ item.percentage }}</td>
-                                <td>{{ item.investmentamount }}</td>
-                                <td>{{ item.marketcap }}</td>
-                                <td>{{ item.enterprisevalue }}</td>
-                                <td>{{ item.trailingpe }}</td>
-                                <td>{{ item.forwardpe }}</td>
-                                <td>{{ item.pegratio }}</td>
-                                <td>{{ item.pricesales }}</td>
+                                <td>{{ item.ticker|format_number }}</td>
+                                <td>{{ item.percentage|format_number }}</td>
+                                <td>{{ item.investmentamount|format_number }}</td>
+                                <td>{{ item.marketcap|format_number }}</td>
+                                <td>{{ item.enterprisevalue|format_number }}</td>
+                                <td>{{ item.trailingpe|format_number }}</td>
+                                <td>{{ item.forwardpe|format_number }}</td>
+                                <td>{{ item.pegratio|format_number }}</td>
+                                <td>{{ item.pricesales|format_number }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -101,54 +94,6 @@ Parameters | Portfolio Builder
                 </div>
             </div>
         </div>
-        <!--Risk-->
-        <div class="col s12">
-            <div class="row">
-                <canvas id="myChartRisk"></canvas>
-                <h6 id="sharpeRatio" class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6> 
-                <div id="colorScaleBarRisk" class="color-scale-bar"></div>
-            </div>
-        </div>
-        <div>
-            <div class="card">
-                <div class="card-content">
-                    <div>
-                        <h5 class="center card-title">Best Portfolio by Risk</h5>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Percentage</th>
-                                <th>Investment Amount</th>
-                                <th>Market Cap</th>
-                                <th>Enterprise Value</th>
-                                <th>Trailing P/E</th>
-                                <th>Forward P/E</th>
-                                <th>PEG Ratio</th>
-                                <th>Price/Sales</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for key, item in risk_dict.financial_data_risk.items %}
-                            <tr>
-                                <td>{{ item.ticker }}</td>
-                                <td>{{ item.percentage }}</td>
-                                <td>{{ item.investmentamount }}</td>
-                                <td>{{ item.marketcap }}</td>
-                                <td>{{ item.enterprisevalue }}</td>
-                                <td>{{ item.trailingpe }}</td>
-                                <td>{{ item.forwardpe }}</td>
-                                <td>{{ item.pegratio }}</td>
-                                <td>{{ item.pricesales }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
         <!--Returns-->
 
         <div class="col s12">
@@ -168,8 +113,8 @@ Parameters | Portfolio Builder
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Percentage</th>
-                                <th>Investment Amount</th>
+                                <th>Investment %</th>
+                                <th>Investment Amt.</th>
                                 <th>Market Cap</th>
                                 <th>Enterprise Value</th>
                                 <th>Trailing P/E</th>
@@ -181,15 +126,15 @@ Parameters | Portfolio Builder
                         <tbody>
                             {% for key, item in return_dict.financial_data_return.items %}
                             <tr>
-                                <td>{{ item.ticker }}</td>
-                                <td>{{ item.percentage }}</td>
-                                <td>{{ item.investmentamount }}</td>
-                                <td>{{ item.marketcap }}</td>
-                                <td>{{ item.enterprisevalue }}</td>
-                                <td>{{ item.trailingpe }}</td>
-                                <td>{{ item.forwardpe }}</td>
-                                <td>{{ item.pegratio }}</td>
-                                <td>{{ item.pricesales }}</td>
+                                <td>{{ item.ticker|format_number }}</td>
+                                <td>{{ item.percentage|format_number }}</td>
+                                <td>{{ item.investmentamount|format_number }}</td>
+                                <td>{{ item.marketcap|format_number }}</td>
+                                <td>{{ item.enterprisevalue|format_number }}</td>
+                                <td>{{ item.trailingpe|format_number }}</td>
+                                <td>{{ item.forwardpe|format_number }}</td>
+                                <td>{{ item.pegratio|format_number }}</td>
+                                <td>{{ item.pricesales|format_number }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -351,11 +296,11 @@ Parameters | Portfolio Builder
         var id_return = 'myChartReturn';
         var color_bar_return = 'colorScaleBarReturn';
 
-        let total_data = [JSON.parse('{{ sharpe_data|escapejs }}'), JSON.parse('{{ risk_data|escapejs }}'), JSON.parse('{{ return_data|escapejs }}')]
-        let financial_info = [('{{ sharpe_dict.tickers|escapejs}}'), ('{{ risk_dict.tickers|escapejs}}'), ('{{ return_dict.tickers|escapejs}}')];
+        let total_data = [JSON.parse('{{ sharpe_data|escapejs }}'), JSON.parse('{{ return_data|escapejs }}')]
+        let financial_info = [('{{ sharpe_dict.tickers|escapejs}}'), ('{{ return_dict.tickers|escapejs}}')];
 
         // Updating total_data with the zipped tickers and weights string
-        for (var i = 0; i < 3; i++) {
+        for (var i = 0; i < 2; i++) {
             var data = total_data[i].weights;
             var tickers = JSON.parse(financial_info[i]);
 
@@ -371,8 +316,7 @@ Parameters | Portfolio Builder
         }
         
         createChart(total_data[0], id_sharpe, color_bar_sharpe);
-        createChart(total_data[1], id_risk, color_bar_risk);
-        createChart(total_data[2], id_return, color_bar_return);
+        createChart(total_data[1], id_return, color_bar_return);
 
         });
     </script>
@@ -393,8 +337,7 @@ Parameters | Portfolio Builder
                             <h6>Helpful Tips:</h6>
                             <ul>
                                 <li>Pick a confidence level between 0 and 1.</li>
-                                <li>Try values of target volatility of 0.6 or greater.</li>
-                                <li>Try values of target returns of 0.3 or less.</li>
+                                <li>Try values of target volatility of 1 or greater.</li>
                             </ul>
                         </div>                        
                     </div>

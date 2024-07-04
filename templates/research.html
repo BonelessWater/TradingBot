@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block title %}
 Research | Portfolio Builder
@@ -11,14 +12,10 @@ Research | Portfolio Builder
     {% csrf_token %}
     <div class="row">
         <div class="input-field col s12">
-            <select name="ticker" required>
-                <option value="" disabled selected>Choose your Ticker</option>
-                {% for ticker in tickers %}
-                <option value="{{ ticker }}">{{ ticker }}</option>
-                {% endfor %}
-            </select>
-            <label>Stock Ticker</label>
+            <input type="text" id="autocomplete-input" class="autocomplete" autocomplete="off">
+            <label for="autocomplete-input">Company Name</label>
         </div>
+        <input type="hidden" id="ticker-input" name="ticker">
 
         <h6 class="left-align">Optional Indicators</h6>
 
@@ -119,6 +116,38 @@ Research | Portfolio Builder
     </div>
 </form>
 </div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Define global variables for tickers and names
+    var tickers = JSON.parse("{{ tickers|escapejs }}");
+    var names = JSON.parse("{{ names|escapejs }}");
+
+    // Create data object with all tickers set to null
+    var data = {};
+    for (var i = 0; i < names.length; i++) {
+        data[names[i]] = null; // Set value to null
+    }
+
+    var elems = document.querySelectorAll('.autocomplete');
+    var instances = M.Autocomplete.init(elems, {
+        data: data,
+        onAutocomplete: function(selectedItem) {
+            // Find the index of the selected item in names array
+            var index = names.indexOf(selectedItem);
+            // Set the hidden input's value to the corresponding ticker
+            if (index !== -1) {
+                document.getElementById('ticker-input').value = tickers[index];
+            }
+        }
+    });
+
+    // Debug output to ensure tickers and names are loaded correctly
+    console.log('Tickers:', tickers);
+    console.log('Names:', names);
+});
+</script>
 {% endblock sidebar %}
 
 {% block content %}
@@ -157,7 +186,7 @@ Research | Portfolio Builder
 
             <div class="col s6">
                     {% for key, item in valuation.items %}
-                        <h6 class="right-align">{{ item }}</h6>
+                        <h6 class="right-align">{{ item|format_number }}</h6>
                     {% endfor %}
             </div>
         </div>
@@ -181,7 +210,7 @@ Research | Portfolio Builder
 
             <div class="col s6">
                     {% for key, item in finance.items %}
-                        <h6 class="right-align">{{ item }}</h6>
+                        <h6 class="right-align">{{ item|format_number }}</h6>
                     {% endfor %}
             </div>
         </div> 
@@ -228,6 +257,12 @@ Research | Portfolio Builder
     var title = '{{ title|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
     
+    if (title != "S&P 500"){
+        var tickers = JSON.parse("{{ tickers|escapejs }}");
+        var names = JSON.parse("{{ names|escapejs }}");
+
+        title = names[tickers.indexOf(title)]
+    }
     const rangeBar = document.getElementById('rangeBar');
     const barContainer = document.getElementById('barContainer');
     const dataInfo = document.getElementById('dataInfo'); // Element to show data info
@@ -269,7 +304,7 @@ Research | Portfolio Builder
                         backgroundColor: colorMapping[key] || 'rgba(0, 0, 0, 0.1)', // Fallback color
                         borderColor: colorMapping[key] || 'rgba(0, 0, 0, 1)', // Fallback color
                         data: chartData[key].map((value, index) => ({ x: chartData.date[index], y: value })),
-                        borderWidth: 3,
+                        borderWidth: 2,
                         fill: false,
                         pointStyle: false,
                         pointRadius: 0,

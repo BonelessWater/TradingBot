@@ -5,7 +5,6 @@ class ParametersForm(forms.Form):
     amount_stocks = forms.IntegerField(label='Number of Stocks')
     horizon = forms.IntegerField(label='Time horizon (months)')
     min_var = forms.DecimalField(label='Target Volatity')
-    min_return = forms.DecimalField(label='Target Returns')
 
 class ResearchForm(forms.Form):
     ticker = forms.CharField()
