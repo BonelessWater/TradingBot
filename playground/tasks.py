@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import yfinance as yf
 import logging
 from .models import FinancialData
+from pypfopt import risk_models
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -56,15 +57,33 @@ def save_data():
     # Download new stock data
     new_data = yf.download(tickers, start=start_date, end=datetime.now(), auto_adjust=True)['Close']
 
+    # Debug: print shape and head of the new data
+    logger.info(f"New data shape: {new_data.shape}")
+    logger.info(f"New data head: \n{new_data.head()}")
+
+    # Handle missing data by filling or dropping NaNs
+    new_data = new_data.dropna()
+
     # Concatenate new data with existing data
     if not existing_data.empty:
         updated_data = pd.concat([existing_data, new_data])
     else:
         updated_data = new_data
 
+    # Debug: print shape and head of the updated data
+    logger.info(f"Updated data shape: {updated_data.shape}")
+    logger.info(f"Updated data head: \n{updated_data.head()}")
+
     # Save the updated DataFrame to the CSV file
     updated_data.to_csv(csv_file_path)
     logger.info("Stock data has been successfully updated.")
+
+    # Ensure the data is passed correctly to the risk model
+    try:
+        S2 = risk_models.exp_cov(updated_data, frequency=updated_data.shape[1], span=updated_data.shape[1], log_returns=True)
+        logger.info("Covariance matrix calculated successfully.")
+    except Exception as e:
+        logger.error(f"Error calculating covariance matrix: {e}")
 
 def get_financial_data(symbol):
     stock = yf.Ticker(symbol)

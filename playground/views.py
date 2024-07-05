@@ -131,8 +131,8 @@ def get_covariance():
     tickers_str = ','.join(sorted(tickers))
     today = date.today()
 
-    # Check if current time is between 12:00 AM and 12:30 AM
-    if current_time >= start_time and current_time <= end_time:
+    # Check if current time is between 12:00 AM and 12:05 AM
+    if start_time <= current_time <= end_time:
         return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
 
     # Check if the data already exists for today
@@ -147,22 +147,24 @@ def get_covariance():
 
     # If not during the restricted time and no entry was found or deserialization failed
     csv_file_path = 'tickers_prices.csv'
-    tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+    try:
+        tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+    except FileNotFoundError:
+        raise ValueError("CSV file not found. Please ensure the file path is correct.")
+    except Exception as e:
+        raise ValueError(f"Error reading the CSV file: {e}")
 
     # Ensure DataFrame is not empty
     if tickers_price_df.empty:
         raise ValueError("Tickers price DataFrame is empty.")
 
-    # Handle missing values by dropping rows with any missing values
-    tickers_price_df.fillna(value=0, inplace=True)  # Fills all NaNs with 0
-    # Ensure there are no missing values after dropping
-    if tickers_price_df.isnull().values.any():
-        raise ValueError("Tickers price DataFrame contains missing values even after dropping.")
+    # Handle missing values by filling with 0
+    tickers_price_df.fillna(value=0, inplace=True)
 
     # Calculate covariance matrix
     try:
         S2 = exp_cov(tickers_price_df, frequency=tickers_price_df.shape[1], span=tickers_price_df.shape[1], log_returns=True)
-        S2 = (S2 + S2.T) / 2
+        S2 = (S2 + S2.T) / 2  # Ensure symmetry
         if S2.empty:
             raise ValueError("Calculated covariance matrix is empty.")
     except Exception as e:
@@ -221,7 +223,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     past_date = date_today - timedelta(days=3 * 365)
 
     tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
-    print(tickers)
 
     csv_file_path = 'tickers_prices.csv'
 
