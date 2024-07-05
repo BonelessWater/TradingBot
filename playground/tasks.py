@@ -21,6 +21,7 @@ def save_data():
         logger.info(f"Most recent date in the CSV: {most_recent_date}")
     except FileNotFoundError:
         logger.info("CSV file not found. A new file will be created.")
+        existing_data = pd.DataFrame()
         most_recent_date = None
     except Exception as e:
         logger.error(f"Error reading the CSV file: {e}")
@@ -28,16 +29,16 @@ def save_data():
 
     # Check if today's date is the most recent date in the CSV
     date_today = datetime.now().date()
-    try:
-        if most_recent_date:
-            date_diff = date_today - most_recent_date.date()
-            if date_diff.days <= 1:
-                logger.info("The stock data is already up to date or within one day of the most recent date.")
-                return
-            else:
-                logger.info("Updating stock data...")
-    except AttributeError:
-        pass
+    if most_recent_date:
+        date_diff = date_today - most_recent_date.date()
+        if date_diff.days <= 1:
+            logger.info("The stock data is already up to date or within one day of the most recent date.")
+            return
+        else:
+            logger.info("Updating stock data...")
+    else:
+        # If no most recent date, set a start date
+        most_recent_date = datetime.now() - timedelta(days=365 * 3)  # Approximately 3 years ago
 
     # Fetch tickers
     tickers_df = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')[0]
@@ -49,14 +50,20 @@ def save_data():
     tickers_to_remove = ['BF.B', 'BRK.B']
     tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
 
-    # Define the past date from which to fetch data
-    past_date = datetime.now() - timedelta(days=365 * 3)  # Approximately 3 years ago
+    # Define the start date for fetching new data
+    start_date = most_recent_date + timedelta(days=1)  # Day after the most recent date in the CSV
 
-    # Download stock data
-    tickers_price_df = yf.download(tickers, start=past_date, end=datetime.now(), auto_adjust=True)['Close']
+    # Download new stock data
+    new_data = yf.download(tickers, start=start_date, end=datetime.now(), auto_adjust=True)['Close']
 
-    # Save or update the DataFrame to the CSV file
-    tickers_price_df.to_csv(csv_file_path)
+    # Concatenate new data with existing data
+    if not existing_data.empty:
+        updated_data = pd.concat([existing_data, new_data])
+    else:
+        updated_data = new_data
+
+    # Save the updated DataFrame to the CSV file
+    updated_data.to_csv(csv_file_path)
     logger.info("Stock data has been successfully updated.")
 
 def get_financial_data(symbol):

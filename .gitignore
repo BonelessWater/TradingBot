@@ -7,4 +7,3 @@ venv/*
 
 keys.py
 weights.txt
-tickers_prices.csv

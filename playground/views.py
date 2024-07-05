@@ -123,10 +123,7 @@ def get_covariance():
     end_time = time(0, 5)  # 12:05 AM
 
     # Query all symbols from the database
-    tickers = SP500Ticker.objects.all().values_list('symbol', flat=True)
-
-    # Convert the QuerySet to a list and remove specific tickers
-    tickers = list(tickers)
+    tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
     
     if not tickers:
         raise ValueError("No tickers available after filtering.")
@@ -151,7 +148,7 @@ def get_covariance():
     # If not during the restricted time and no entry was found or deserialization failed
     csv_file_path = 'tickers_prices.csv'
     tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
-    #print(tickers_price_df)
+
     # Ensure DataFrame is not empty
     if tickers_price_df.empty:
         raise ValueError("Tickers price DataFrame is empty.")
@@ -223,11 +220,8 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     date_today = date.today()
     past_date = date_today - timedelta(days=3 * 365)
 
-    tickers = list(SP500Ticker.objects.all().values_list('symbol', flat=True))
+    tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
     print(tickers)
-    # Remove specific tickers
-    tickers_to_remove = ['BF.B', 'BRK.B', 'BF-B', 'BRK-B']
-    tickers = [ticker for ticker in tickers if ticker not in tickers_to_remove]
 
     csv_file_path = 'tickers_prices.csv'
 

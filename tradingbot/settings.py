@@ -21,7 +21,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', '169.254.131.4', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['stockportfoliobuilder.azurewebsites.net','https://stockportfoliobuilder.azurewebsites.net', '169.254.131.3', '169.254.130.3', '169.254.131.4', 'localhost', '127.0.0.1']
 
 CORS_ALLOWED_ORIGINS = [
     "https://stockportfoliobuilder.azurewebsites.net",
