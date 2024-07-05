@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from .forms import ParametersForm, ResearchForm
 from .models import CovarianceData, SP500Ticker, FinancialData
+import logging
 import yfinance as yf
 import time as t
 import json
@@ -14,6 +15,8 @@ from datetime import datetime, timedelta, date, time
 from statistics import NormalDist
 from datetime import datetime, timedelta
 import decimal
+
+logger = logging.getLogger(__name__)
 
 def main(request):
     #CovarianceData.flush()
@@ -118,66 +121,80 @@ def g_mean(x):
     return np.exp(a.mean())
 
 def get_covariance():
-    current_time = datetime.now().time()
-    start_time = time(0, 0)  # 12:00 AM
-    end_time = time(0, 5)  # 12:05 AM
+    try:
+        current_time = datetime.now().time()
+        start_time = time(0, 0)  # 12:00 AM
+        end_time = time(0, 5)  # 12:05 AM
 
-    # Query all symbols from the database
-    tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
-    
-    if not tickers:
-        raise ValueError("No tickers available after filtering.")
+        # Query all symbols from the database
+        tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
+        
+        if not tickers:
+            raise ValueError("No tickers available after filtering.")
 
-    tickers_str = ','.join(sorted(tickers))
-    today = date.today()
+        tickers_str = ','.join(sorted(tickers))
+        today = date.today()
 
-    # Check if current time is between 12:00 AM and 12:05 AM
-    if start_time <= current_time <= end_time:
-        return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
+        # Check if current time is between 12:00 AM and 12:05 AM
+        if start_time <= current_time <= end_time:
+            return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
 
-    # Check if the data already exists for today
-    covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
+        # Check if the data already exists for today
+        covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
 
-    if covariance_entry:
+        if covariance_entry:
+            try:
+                S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
+                return S2
+            except AttributeError:
+                logger.error("Error deserializing covariance matrix from the database.")
+
+        # If not during the restricted time and no entry was found or deserialization failed
+        csv_file_path = 'tickers_prices.csv'
         try:
-            S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
-            return S2
-        except AttributeError:
-            pass
+            tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+            logger.info(f"CSV file loaded successfully from {csv_file_path}")
+        except FileNotFoundError:
+            logger.error(f"CSV file not found at path: {csv_file_path}")
+            raise ValueError("CSV file not found. Please ensure the file path is correct.")
+        except Exception as e:
+            logger.error(f"Error reading the CSV file: {e}")
+            raise ValueError(f"Error reading the CSV file: {e}")
 
-    # If not during the restricted time and no entry was found or deserialization failed
-    csv_file_path = 'tickers_prices.csv'
-    try:
-        tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
-    except FileNotFoundError:
-        raise ValueError("CSV file not found. Please ensure the file path is correct.")
+        # Ensure DataFrame is not empty
+        if tickers_price_df.empty:
+            logger.error("Tickers price DataFrame is empty.")
+            raise ValueError("Tickers price DataFrame is empty.")
+
+        # Handle missing values by filling with 0
+        tickers_price_df.fillna(value=0, inplace=True)
+
+        # Log the size of the DataFrame
+        logger.info(f"Size of DataFrame: {tickers_price_df.shape}")
+
+        # Calculate covariance matrix
+        try:
+            S2 = exp_cov(tickers_price_df, frequency=252, span=60, log_returns=True)  # Adjust frequency and span as needed
+            S2 = (S2 + S2.T) / 2  # Ensure symmetry
+            if S2.empty:
+                logger.error("Calculated covariance matrix is empty.")
+                raise ValueError("Calculated covariance matrix is empty.")
+        except Exception as e:
+            logger.error(f"Error calculating covariance matrix: {e}")
+            raise ValueError(f"Error calculating covariance matrix: {e}")
+
+        # Save the new result in the database
+        CovarianceData.objects.update_or_create(
+            tickers=tickers_str,
+            calculation_date=today,
+            defaults={'covariance_matrix': S2.to_json()}
+        )
+        logger.info("Covariance matrix calculated and saved successfully.")
+
+        return S2
     except Exception as e:
-        raise ValueError(f"Error reading the CSV file: {e}")
-
-    # Ensure DataFrame is not empty
-    if tickers_price_df.empty:
-        raise ValueError("Tickers price DataFrame is empty.")
-
-    # Handle missing values by filling with 0
-    tickers_price_df.fillna(value=0, inplace=True)
-
-    # Calculate covariance matrix
-    try:
-        S2 = exp_cov(tickers_price_df, frequency=tickers_price_df.shape[1], span=tickers_price_df.shape[1], log_returns=True)
-        S2 = (S2 + S2.T) / 2  # Ensure symmetry
-        if S2.empty:
-            raise ValueError("Calculated covariance matrix is empty.")
-    except Exception as e:
-        raise ValueError(f"Error calculating covariance matrix: {e}")
-
-    # Save the new result in the database
-    CovarianceData.objects.update_or_create(
-        tickers=tickers_str,
-        calculation_date=today,
-        defaults={'covariance_matrix': S2.to_json()}
-    )
-
-    return S2
+        logger.error(f"Unexpected error in get_covariance: {e}")
+        raise
 
 def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     confidence_level = 0.999
