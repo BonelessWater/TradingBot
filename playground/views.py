@@ -140,7 +140,8 @@ def get_covariance():
             return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
 
         # Check if the data already exists for today
-        covariance_entry = CovarianceData.objects.filter(tickers=tickers_str, calculation_date=today).first()
+        covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).first()
+        print("didnt have to do allat")
 
         if covariance_entry:
             try:
@@ -171,6 +172,7 @@ def get_covariance():
 
         # Log the size of the DataFrame
         logger.info(f"Size of DataFrame: {tickers_price_df.shape}")
+        logger.info(f"Missing values {tickers_price_df.isnull().sum()}")
 
         # Calculate covariance matrix
         try:
