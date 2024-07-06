@@ -15,13 +15,15 @@ This project is a web application for a trading bot that displays financial data
 
 ## Project Overview
 
-The Django Trading Bot is designed to help users analyze financial data and market indicators. It provides a user-friendly interface to view financial metrics and perform technical analysis.
+The Django Trading Bot is designed to help users analyze financial data and market indicators. It provides a user-friendly interface to view financial metrics, perform technical analysis, and offers additional functionalities like the efficient portfolio with the most recent stock market data and AI news sentiment analysis.
 
 ## Features
 
 - Display financial data for selected stocks
 - Show technical indicators like SMA, EMA, Bollinger Bands, RSI, MACD, and Stochastic
 - Interactive research page to view stock data and charts
+- Generate an efficient portfolio with the latest stock market data
+- AI-powered news sentiment analysis for informed decision-making
 - Admin panel for managing data and settings
 
 ## Installation
@@ -87,6 +89,14 @@ Follow these steps to set up the project on your local machine.
 
 - Visit `http://127.0.0.1:8000/research/` to use the research functionalities.
 - Click on the stock tickers to view detailed financial data and indicators.
+
+### Efficient Portfolio
+
+- Visit `http://127.0.0.1:8000/portfolio/` to view the efficient portfolio generated using the most recent stock market data.
+
+### AI News Sentiment Analysis
+
+- Visit `http://127.0.0.1:8000/news-sentiment/` to see AI-powered news sentiment analysis, helping you make informed trading decisions.
 
 ## Configuration
 
