@@ -536,7 +536,7 @@ def research(request):
             print(research_form.errors) 
 
     elif selected_ticker:
-        chart_data = get_stock_data(selected_ticker,0,0,0,0,0,0)
+        chart_data = get_stock_data(selected_ticker,50,50,0,0,0,0)
         valuation, finance, financial_data = get_financial_data(selected_ticker)
         return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
     
