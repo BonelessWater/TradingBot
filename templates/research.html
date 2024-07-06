@@ -377,10 +377,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let isDragging = false;
     let startClientX;
 
-    rangeBar.addEventListener('mousedown', function(e) {
+    document.getElementById('myChart').addEventListener('mousedown', function(e) {
         isDragging = true;
         startClientX = e.clientX;
-        e.preventDefault();
+        e.preventDefault(); // Prevent default action such as text selection
+    });
+    
+    document.getElementById('rangeBar').addEventListener('mousedown', function(e) {
+        isDragging = true;
+        startClientX = e.clientX;
+        e.preventDefault(); // Prevent default action such as text selection
     });
 
     window.addEventListener('mousemove', function(e) {

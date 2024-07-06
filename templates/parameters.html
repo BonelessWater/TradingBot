@@ -82,7 +82,7 @@ Parameters | Portfolio Builder
                             </tr>
                         </thead>
                         <tbody>
-                            {% for key, item in return_dict.financial_data_return.items %}
+                            {% for key, item in sharpe_dict.financial_data_sharpe.items %}
                             <tr>
                                 <td><a href="{% url 'research' %}?ticker={{ item.ticker }}">{{ item.ticker }}</a></td>
                                 <td>{{ item.percentage|format_number }}</td>

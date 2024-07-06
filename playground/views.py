@@ -330,16 +330,15 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     # Maximum Sharpe ratio
     ef_sharpe = EfficientFrontier(mu2[tickers_sharpe], sharpe_cov)
     weights_sharpe = ef_sharpe.max_sharpe()
-    ef_sharpe.clean_weights()
-
+    weights_sharpe = ef_sharpe.clean_weights()
     # Maximum return for a given risk
     ef_return = EfficientFrontier(mu2[tickers_return], return_cov)
     
     try: 
         weights_return = ef_return.efficient_risk(target_volatility=float(min_var))
+        weights_return = ef_return.clean_weights()
     except ValueError as e:
         return True, e, 0,0,0,0
-    ef_return.clean_weights()
 
     ef_sharpe.portfolio_performance(verbose=True)
     ef_return.portfolio_performance(verbose=True)
