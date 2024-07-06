@@ -511,6 +511,9 @@ def research(request):
     tickers = json.dumps([item[0] for item in tickers_and_names])
     names = json.dumps([item[1] for item in tickers_and_names])
 
+    # Extract the ticker from query parameters
+    selected_ticker = request.GET.get('ticker', None)
+
     if request.method == 'POST':
         
         research_form = ResearchForm(request.POST)
@@ -532,6 +535,11 @@ def research(request):
         else:
             print(research_form.errors) 
 
+    elif selected_ticker:
+        chart_data = get_stock_data(selected_ticker,0,0,0,0,0,0)
+        valuation, finance, financial_data = get_financial_data(selected_ticker)
+        return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
+    
     return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
 
 def indicator(request):

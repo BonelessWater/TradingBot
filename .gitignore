@@ -4,7 +4,9 @@ env
 env/*
 venv
 venv/*
+__pycache__
 
 keys.py
 weights.txt
 debug.log
+test.py
