@@ -51,8 +51,14 @@ Parameters | Portfolio Builder
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartSharpe"></canvas>
-                <h6 class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
-                <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
+                <div class="row">
+                    <div class="col s2">
+                        <h6 id="sharpeRatioS" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
+                </div>
             </div>
         </div>
         <div>
@@ -99,12 +105,18 @@ Parameters | Portfolio Builder
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartReturn"></canvas>
-                <h6 id="sharpeRatio" class="hover-popup tooltipped" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6> 
-                <div id="colorScaleBarReturn" class="color-scale-bar"></div>
+                <div class="row">
+                    <div class="col s2">
+                        <h6 id="sharpeRatioR" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="colorScaleBarReturn" class="color-scale-bar"></div>
+                </div>
             </div>
         </div>
         <div>
-            <div class="card">
+        <div class="card">
                 <div class="card-content">
                     <div>
                         <h5 class="center card-title">Best Portfolio by Returns</h5>
@@ -153,25 +165,40 @@ Parameters | Portfolio Builder
             const tooltippedElements = document.querySelectorAll('.tooltipped');
             M.Tooltip.init(tooltippedElements);
 
-            const h6Element = document.getElementById('sharpeRatio');
-            const colorScaleBar = document.getElementById('colorScaleBarReturn');
+            const h6ElementS = document.getElementById('sharpeRatioS');
+            const h6ElementR = document.getElementById('sharpeRatioR');
+            const colorScaleBarSharpe = document.getElementById('colorScaleBarSharpe');
+            const colorScaleBarReturn = document.getElementById('colorScaleBarReturn');
 
             // Simulate color scale bar loading
             setTimeout(() => {
                 // Assume the color scale bar has been loaded
-                colorScaleBar.classList.add('loaded'); // Add a class to indicate it's loaded
+                colorScaleBarSharpe.classList.add('loaded'); // Add a class to indicate it's loaded
+                colorScaleBarReturn.classList.add('loaded'); // Add a class to indicate it's loaded
 
                 // Now show the h6 element
-                h6Element.style.display = 'inline-block';
+                h6ElementS.style.display = 'inline-block';
+                h6ElementR.style.display = 'inline-block';
             }, 2000); // Simulate a 2-second load time for the color scale bar
 
-            h6Element.addEventListener('mouseover', function () {
-                const rect = h6Element.getBoundingClientRect();
-                const tooltip = h6Element.dataset.tooltip;
-                M.toast({html: tooltip, displayLength: 2000});
+            h6ElementS.addEventListener('mouseover', function () {
+                const rect = h6ElementS.getBoundingClientRect();
+                const tooltip = h6ElementS.dataset.tooltip;
+                M.toast({html: tooltip, displayLength: 4000});
+            });
+            h6ElementR.addEventListener('mouseover', function () {
+                const rect = h6ElementR.getBoundingClientRect();
+                const tooltip = h6ElementR.dataset.tooltip;
+                M.toast({html: tooltip, displayLength: 4000});
             });
 
-            h6Element.addEventListener('mouseout', function () {
+            h6ElementS.addEventListener('mouseout', function () {
+                const tooltips = document.querySelectorAll('.toast');
+                tooltips.forEach(tooltip => {
+                    M.Toast.getInstance(tooltip).dismiss();
+                });
+            });
+            h6ElementR.addEventListener('mouseout', function () {
                 const tooltips = document.querySelectorAll('.toast');
                 tooltips.forEach(tooltip => {
                     M.Toast.getInstance(tooltip).dismiss();
@@ -291,8 +318,6 @@ Parameters | Portfolio Builder
 
         var id_sharpe = 'myChartSharpe';
         var color_bar_sharpe = 'colorScaleBarSharpe';
-        var id_risk = 'myChartRisk';
-        var color_bar_risk = 'colorScaleBarRisk';
         var id_return = 'myChartReturn';
         var color_bar_return = 'colorScaleBarReturn';
 

@@ -24,7 +24,23 @@ def main(request):
     #store_tickers_in_db()
     return render(request, 'main.html')
 
-def get_financial_data(symbol, investment_amount = -1, weight = 0):
+def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
+    """Gets the financial data relavent to a specified stock ticker
+
+    Parameters
+    ----------
+    symbol : string
+        the stock ticker
+    investment_amount : int, optional
+        the amount in units, that the user wants to invest, by default -1
+    weight : float, optional
+        the calculated percentage that the user should invest in the specific stock (given by efficient frontier), by default 0
+
+    Returns
+    -------
+    dict, dict, dict
+        dictionaries of a stock's financial information
+    """
 
     # Query the database for the specified ticker
     financial_data = FinancialData.objects.get(ticker=symbol)
@@ -86,6 +102,13 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0):
     return valuation, finance, data
 
 def get_sp500_data():
+    """Gets sp500 data to be shown in the research tab by default
+
+    Returns
+    -------
+    dict
+        sp500 closing prices and moving average
+    """
     
     # Define the ticker symbol for the S&P 500
     ticker_symbol = '^GSPC'
@@ -121,6 +144,18 @@ def g_mean(x):
     return np.exp(a.mean())
 
 def get_covariance():
+    """Gets or calculates the covarainces matrix of the sp500's closing prices. if already calculated, it is fetched from a database
+
+    Returns
+    -------
+    pd.dataframe
+        returns the covaraince matrix in the form of a datafram
+
+    Raises
+    ------
+    ValueError
+        raises value errors for debugging
+    """
     try:
         current_time = datetime.now().time()
         start_time = time(0, 0)  # 12:00 AM
@@ -199,7 +234,23 @@ def get_covariance():
         raise
 
 def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
-    confidence_level = 0.999
+    """returns the efficient portfolio of the number of stocks the user specifies
+
+    Parameters
+    ----------
+    investment_amount : int
+        the amount in units, that the user would like to invest
+    number_of_stocks : int
+        the number of stocks the user whats to consider
+    horizon : int
+        the amount of time the user expects to invest before liquidation
+    min_var : float
+        the minimun value at risk that the user is willing to incur
+
+    Returns
+    -------
+    error, error message, best protfolio by sharpe ratio, sharpe ratio stock info, best portfolio by returns, returns stock info
+    """
     # Error checkers
     error = False
     message = ''
@@ -216,10 +267,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
 
     horizon = round(horizon)
 
-    if confidence_level < 0 or 1 < confidence_level:
-        message = 'Your confidence level should be a number between 0 and 1'
-        return True, message, 0,0,0,0
-    elif investment_amount < 0:
+    if investment_amount < 0:
         message = 'You must invest more than one unit'
         return True, message, 0,0,0,0
     elif number_of_stocks <= 0:
@@ -232,14 +280,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
         message = 'What are you trying to look into the past? Choose a larger horizon'
         return True, message, 0,0,0,0
     
-    confidence_level = float(confidence_level)
-    
     horizon = np.sqrt(horizon)
-    
-    z = NormalDist().inv_cdf(confidence_level)
-
-    date_today = date.today()
-    past_date = date_today - timedelta(days=3 * 365)
 
     tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
 
@@ -257,14 +298,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
 
     mu2.name = None
     mu2 = mu2.fillna(0)
-    
-    tickers_daily_volatility_df = np.log(1 + tickers_price_df.pct_change(fill_method=None))
-    tickers_individual_volatility_df = pd.DataFrame(data=np.std(tickers_daily_volatility_df, axis=0), columns=['Individual Volatility'])
-
-    avg_individual_volatility_df = pd.DataFrame(data=np.mean(tickers_daily_volatility_df, axis=0), columns=['Avg Individual Volatility'])
-    var_individual_df = pd.DataFrame((avg_individual_volatility_df['Avg Individual Volatility'].mul(horizon)).sub((tickers_individual_volatility_df['Individual Volatility'].mul(z)).mul(horizon)), columns=['Individual VaR'])
-    
-    exp_ret = pd.DataFrame(data=mu2, index=tickers, columns=['Exponential Returns'])
 
     exp_ret_sort = mu2.sort_values(ascending=False)
     exp_ret_sort.drop(exp_ret_sort.tail(len(exp_ret_sort) - number_of_stocks).index, inplace=True)
@@ -286,7 +319,6 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     stdev_expon_sort.drop(stdev_expon_sort.tail(len(stdev_expon_sort)-number_of_stocks).index,inplace = True)
 
     sharpe = mu2/stdev_expon_df['Deviation']
-    sharpe_expon_df = pd.DataFrame(sharpe, columns = ['Sharpe Ratio'])
 
     sharpe_expon_sort = sharpe.sort_values(ascending = False)
     sharpe_expon_sort.drop(sharpe_expon_sort.tail(len(sharpe_expon_sort)-number_of_stocks).index,inplace = True)
@@ -359,7 +391,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     
     return error, message, sharpe_data, sharpe_dict, return_data, return_dict
 
-def parameters(request):    
+def parameters(request):   
     if request.method == 'POST':
 
         parameters = ParametersForm(request.POST)
@@ -474,7 +506,6 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
     return json.dumps(data)
 
 def research(request):
-    
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name')) # Query them together to not lose ordering
     
     tickers = json.dumps([item[0] for item in tickers_and_names])
