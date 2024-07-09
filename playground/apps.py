@@ -13,11 +13,10 @@ class PlaygroundConfig(AppConfig):
         self.start_scheduler()
 
     def start_scheduler(self):
-        from .tasks import save_data, save_all_sp500_metrics  # Import your task functions here
+        from .tasks import save_data, save_all_sp500_metrics, daily_cov  # Import your task functions here
 
         scheduler = BackgroundScheduler()
         
-        # Schedule save_data task to run daily at midnight
         scheduler.add_job(
             save_data,
             trigger=CronTrigger(hour=0, minute=0),  # Run daily at 12:00 AM
@@ -26,11 +25,18 @@ class PlaygroundConfig(AppConfig):
             max_instances=1
         )
         
-        # Schedule save_all_sp500_metrics task to run daily at midnight
         scheduler.add_job(
             save_all_sp500_metrics,
-            trigger=CronTrigger(hour=0, minute=0),  # Run daily at 12:00 AM
+            trigger=CronTrigger(hour=0, minute=30),  # Run daily at 12:00 AM
             id='daily_save_all_sp500_metrics',
+            replace_existing=True,
+            max_instances=1
+        )
+        
+        scheduler.add_job(
+            daily_cov,
+            trigger=CronTrigger(hour=0, minute=45),  # Run daily at 12:00 AM
+            id='daily_cov',
             replace_existing=True,
             max_instances=1
         )

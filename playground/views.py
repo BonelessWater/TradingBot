@@ -162,10 +162,6 @@ def get_covariance():
         raises value errors for debugging
     """
     try:
-        current_time = datetime.now().time()
-        start_time = time(0, 0)  # 12:00 AM
-        end_time = time(0, 5)  # 12:05 AM
-
         # Query all symbols from the database
         tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
         
@@ -175,15 +171,15 @@ def get_covariance():
         tickers_str = ','.join(sorted(tickers))
         today = date.today()
 
-        # Check if current time is between 12:00 AM and 12:05 AM
-        if start_time <= current_time <= end_time:
-            return HttpResponse("Daily calculations are currently under construction. Please try again after 12:05 AM UTC")
-
         # Check if the data already exists for today
-        covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).first()
-        print("didnt have to do allat")
+        covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).order_by('-calculation_date').first()
 
-        if covariance_entry:
+        today = date.today()
+        calculation_day = covariance_entry.calculation_date
+        print(today, calculation_day)
+        print(today == calculation_day)
+
+        if today == calculation_day:
             try:
                 S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
                 return S2

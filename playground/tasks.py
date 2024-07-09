@@ -1,9 +1,10 @@
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import yfinance as yf
 import logging
-from .models import FinancialData
+from .models import FinancialData, CovarianceData, SP500Ticker
 from pypfopt import risk_models
+from pypfopt.risk_models import exp_cov
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO)
@@ -148,7 +149,6 @@ def get_financial_data(symbol):
     )
 
 def save_all_sp500_metrics():
-
     most_recent_date = FinancialData.objects.all().order_by('id').first().created_at
     # Check if today's date is the most recent date in the CSV
     date_today = datetime.now().date()
@@ -175,3 +175,61 @@ def save_all_sp500_metrics():
             get_financial_data(ticker)
         except Exception as e:
             print(f"Could not retrieve data for {ticker}: {e}")
+
+def daily_cov():
+    try:
+        # Query all symbols from the database
+        tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
+        
+        if not tickers:
+            raise ValueError("No tickers available after filtering.")
+
+        tickers_str = ','.join(sorted(tickers))
+        today = date.today()
+
+        # If not during the restricted time and no entry was found or deserialization failed
+        csv_file_path = 'tickers_prices.csv'
+        try:
+            tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+            logger.info(f"CSV file loaded successfully from {csv_file_path}")
+        except FileNotFoundError:
+            logger.error(f"CSV file not found at path: {csv_file_path}")
+            raise ValueError("CSV file not found. Please ensure the file path is correct.")
+        except Exception as e:
+            logger.error(f"Error reading the CSV file: {e}")
+            raise ValueError(f"Error reading the CSV file: {e}")
+
+        # Ensure DataFrame is not empty
+        if tickers_price_df.empty:
+            logger.error("Tickers price DataFrame is empty.")
+            raise ValueError("Tickers price DataFrame is empty.")
+
+        # Handle missing values by filling with 0
+        tickers_price_df.fillna(value=0, inplace=True)
+
+        # Log the size of the DataFrame
+        logger.info(f"Size of DataFrame: {tickers_price_df.shape}")
+        logger.info(f"Missing values {tickers_price_df.isnull().sum()}")
+
+        # Calculate covariance matrix
+        try:
+            S2 = exp_cov(tickers_price_df, frequency=252, span=60, log_returns=True)  # Adjust frequency and span as needed
+            S2 = (S2 + S2.T) / 2  # Ensure symmetry
+            if S2.empty:
+                logger.error("Calculated covariance matrix is empty.")
+                raise ValueError("Calculated covariance matrix is empty.")
+        except Exception as e:
+            logger.error(f"Error calculating covariance matrix: {e}")
+            raise ValueError(f"Error calculating covariance matrix: {e}")
+
+        # Save the new result in the database
+        CovarianceData.objects.update_or_create(
+            tickers=tickers_str,
+            calculation_date=today,
+            defaults={'covariance_matrix': S2.to_json()}
+        )
+        logger.info("Covariance matrix calculated and saved successfully.")
+
+    except Exception as e:
+        logger.error(f"Unexpected error in get_covariance: {e}")
+        raise   
