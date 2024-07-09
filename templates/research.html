@@ -492,6 +492,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     $(document).ready(function() {
         $('button').click(function() {
+            // Remove 'green' class from all buttons and add 'red lighten-1' to ensure they are all red
+            $('button').removeClass('green accent-3').addClass('red lighten-1');
+
+            // Add 'green' class to the clicked button and remove 'red lighten-1'
+            $(this).removeClass('red lighten-1').addClass('green accent-3');
+
             var action = $(this).attr('id').replace('load', '').replace(/([A-Z])/g, '_$1').toUpperCase().trim('_'); // Convert button ID to action
             var ticker = '{{ title|escapejs }}';
             $.ajax({
