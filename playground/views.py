@@ -509,31 +509,42 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     return json.dumps(data)
 
-def data_output(ticker='VZ', data_type='CASH_FLOW'):
+def data_output(ticker, data_type):
     if data_type == 'INCOME_STATEMENT':
         exist = IncomeStatement.objects.filter(symbol=ticker).exists()
-        function = data_type
-        if exist == False:
+        if not exist:
+            response = requests.get(f'https://www.alphavantage.co/query?function={data_type}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json().get('annualReports', [])
+
+            options = ['fiscalDateEnding', 'reportedCurrency', 'grossProfit', 'totalRevenue', 'costOfRevenue', 'operatingIncome', 'operatingExpenses', 'depreciation', 'netIncome']
+            with open('output.csv', 'w') as f:
+                f.write(f"{','.join(options)}\n")
+                for entry in data:
+                    line = ",".join(str(entry.get(key) if entry.get(key) is not None else 0) for key in options)
+                    f.write(line + "\n")
+
+            # Reading the CSV
+            file = pd.read_csv('output.csv')
             
-            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
-            data = response.json()['annualReports']
-            # convert to csv
-            f = open("temp_csv.txt", 'w')
-            options = ['fiscalDateEnding','reportedCurrency','grossProfit','totalRevenue','costOfRevenue','operatingIncome','operatingExpenses','depreciation','netIncome']
-            f.write(f"{','.join(options)}\n")
-            
-            for entry in data:
-                line = ",".join([entry[key] for key in entry.keys() if key in options])
-                f.write(line + "\n")
+            # Ensure no NaN values slip through
+            file.fillna(0, inplace=True)
 
-            f.close()
+            # Create IncomeStatement entries
+            for row in file.itertuples():
+                IncomeStatement.objects.create(
+                    symbol=ticker,
+                    fiscal_Date_Ending=datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'),
+                    reported_Currency=row.reportedCurrency,
+                    gross_Profit=row.grossProfit,
+                    total_Revenue=row.totalRevenue,
+                    cost_Of_Revenue=row.costOfRevenue,
+                    operating_Income=row.operatingIncome,
+                    operating_Expenses=row.operatingExpenses,
+                    Depreciation=row.depreciation,
+                    net_Income=row.netIncome
+                )
 
-            file = pd.read_csv('temp_csv.txt')            
-
-            for row in file.itertuples():    
-                a = IncomeStatement.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, gross_Profit = row.grossProfit, total_Revenue = row.totalRevenue, 
-                                            cost_Of_Revenue = row.costOfRevenue, operating_Income = row.operatingIncome, operating_Expenses = row.operatingExpenses, Depreciation = row.depreciation, net_Income = row.netIncome)
-
+        # Gathering data for visualization or further processing
         condition = {
             "symbol": f'{ticker}',
         }
@@ -552,31 +563,32 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
         return [function, ticker, json.dumps(net_income_data), json.dumps(total_revenue_data), json.dumps(cost_of_revenue_data), json.dumps(operating_income_data), json.dumps(gross_profit_data), json.dumps(operating_expenses_data), json.dumps(depreciation_data) ]
     elif data_type == 'BALANCE_SHEET':
         exist = BalanceSheet.objects.filter(symbol=ticker).exists()
-        function = data_type
-        if exist == False:
-            
-            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
-            data = response.json()['annualReports']
-            # convert to csv
-            f = open("temp_csv.txt", 'w')
-            options = ['fiscalDateEnding','reportedCurrency','totalAssets','totalCurrentAssets','investments','currentDebt','treasuryStock','commonStock']
-            f.write(f"{','.join(options)}\n")
-            
-            for entry in data:
-                info = [entry[key] for key in entry.keys() if key in options]
-                for i in range(len(info)): # Removing None values
-                    if info[i] == 'None':
-                        info[i] = '0'
-                line = ",".join(info)
-                f.write(line + "\n")
+        if not exist:
+            response = requests.get(f'https://www.alphavantage.co/query?function={data_type}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json().get('annualReports', [])
 
-            f.close()
+            options = ['fiscalDateEnding', 'reportedCurrency', 'totalAssets', 'totalCurrentAssets', 'investments', 'currentDebt', 'treasuryStock', 'commonStock']
+            with open('output.csv', 'w') as f:
+                f.write(f"{','.join(options)}\n")
+                for entry in data:
+                    line = ",".join(str(entry.get(key, 0) if entry.get(key) is not None else 0) for key in options)
+                    f.write(line + "\n")
 
-            file = pd.read_csv('temp_csv.txt')            
+            file = pd.read_csv('output.csv')
+            file.fillna(0, inplace=True)  # Ensures no NaN values
 
-            for row in file.itertuples():    
-                a = BalanceSheet.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, 
-                total_Assets = row.totalAssets, total_Current_Assets = row.totalCurrentAssets, Investments = row.investments, current_Debt = row.currentDebt, treasury_Stock = row.treasuryStock, common_Stock = row.commonStock)
+            for row in file.itertuples():
+                BalanceSheet.objects.create(
+                    symbol=ticker,
+                    fiscal_Date_Ending=datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'),
+                    reported_Currency=row.reportedCurrency,
+                    total_Assets=row.totalAssets or 0,
+                    total_Current_Assets=row.totalCurrentAssets or 0,
+                    Investments=row.investments or 0,
+                    current_Debt=row.currentDebt or 0,
+                    treasury_Stock=row.treasuryStock or 0,
+                    common_Stock=row.commonStock or 0
+                )
 
         condition = {
             "symbol": f'{ticker}',
@@ -595,31 +607,35 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
         return [function, ticker, json.dumps(total_assets_data), json.dumps(total_current_assets_data), json.dumps(investment_data), json.dumps(current_debt_data), json.dumps(treasury_stock_data), json.dumps(common_stock_data)]
     elif data_type == 'CASH_FLOW':
         exist = CashFlow.objects.filter(symbol=ticker).exists()
-        function = data_type
-        if exist == False:
-            
-            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
-            data = response.json()['annualReports']
-            # convert to csv
-            f = open("temp_csv.txt", 'w')
-            options = ['fiscalDateEnding','operatingCashflow','capitalExpenditures','changeInInventory','profitLoss','cashflowFromInvestment','cashflowFromFinancing','dividendPayout']
-            f.write(f"{','.join(options)}\n")
-            
-            for entry in data:
-                info = [entry[key] for key in entry.keys() if key in options]
-                for i in range(len(info)): # Removing None values
-                    if info[i] == 'None':
-                        info[i] = '0'
-                line = ",".join(info)
-                f.write(line + "\n")
+        if not exist:
+            response = requests.get(f'https://www.alphavantage.co/query?function={data_type}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json().get('annualReports', [])
 
-            f.close()
+            # Prepare CSV file
+            options = ['fiscalDateEnding', 'operatingCashflow', 'capitalExpenditures', 'changeInInventory', 'profitLoss', 'cashflowFromInvestment', 'cashflowFromFinancing', 'dividendPayout']
+            with open('output.csv', 'w') as f:
+                f.write(f"{','.join(options)}\n")
+                for entry in data:
+                    line = ",".join(str(entry.get(key, 0) if entry.get(key) is not None else 0) for key in options)
+                    f.write(line + "\n")
 
-            file = pd.read_csv('temp_csv.txt')            
+            # Read the CSV file
+            file = pd.read_csv('output.csv')
+            file.fillna(0, inplace=True)  # Ensure no NaN values
 
-            for row in file.itertuples():    
-                a = CashFlow.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), operating_Cashflow = row.operatingCashflow, capital_Expenditures = row.capitalExpenditures, change_In_Inventory = row.changeInInventory, 
-                                            profit_Loss = row.profitLoss, cashflow_From_Investment = row.cashflowFromInvestment, cashflow_From_Financing = row.cashflowFromFinancing, dividend_Payout = row.dividendPayout)
+            # Create CashFlow entries
+            for row in file.itertuples():
+                CashFlow.objects.create(
+                    symbol=ticker,
+                    fiscal_Date_Ending=datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'),
+                    operating_Cashflow=row.operatingCashflow or 0,
+                    capital_Expenditures=row.capitalExpenditures or 0,
+                    change_In_Inventory=row.changeInInventory or 0,
+                    profit_Loss=row.profitLoss or 0,
+                    cashflow_From_Investment=row.cashflowFromInvestment or 0,
+                    cashflow_From_Financing=row.cashflowFromFinancing or 0,
+                    dividend_Payout=row.dividendPayout or 0
+                )
 
         condition = {
             "symbol": f'{ticker}',
@@ -638,30 +654,31 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
         return [function, ticker, json.dumps(operating_cashflow_data), json.dumps(capital_expenditures_data), json.dumps(change_in_inventory_data), json.dumps(profit_loss_data), json.dumps(cashflow_from_investment_data), json.dumps(cashflow_from_financing_data), json.dumps(dividend_payout_data)]
     elif data_type == 'EARNINGS':
         exist = Earnings.objects.filter(symbol=ticker).exists()
-        function = data_type
-        if exist == False:
-            
-            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
-            data = response.json()['quarterlyEarnings']
-            # convert to csv
-            f = open("temp_csv.txt", 'w')
-            options = ['fiscalDateEnding','reportedEPS','estimatedEPS','surprise','surprisePercentage']
-            f.write(f"{','.join(options)}\n")
-            
-            for entry in data:
-                info = [entry[key] for key in entry.keys() if key in options]
-                for i in range(len(info)): # Removing None values
-                    if info[i] == 'None':
-                        info[i] = '0'
-                line = ",".join(info)
-                f.write(line + "\n")
+        if not exist:
+            response = requests.get(f'https://www.alphavantage.co/query?function={data_type}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json().get('quarterlyEarnings', [])
 
-            f.close()
+            options = ['fiscalDateEnding', 'reportedEPS', 'estimatedEPS', 'surprise', 'surprisePercentage']
+            with open('output.csv', 'w') as f:
+                f.write(f"{','.join(options)}\n")
+                for entry in data:
+                    line = ",".join(str(entry.get(key, 0) if entry.get(key) is not None else 0) for key in options)
+                    f.write(line + "\n")
 
-            file = pd.read_csv('temp_csv.txt')            
+            # Read the CSV file
+            file = pd.read_csv('output.csv')
+            file.fillna(0, inplace=True)  # Ensure no NaN values
 
-            for row in file.itertuples():    
-                a = Earnings.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_eps = row.reportedEPS, estimated_eps = row.estimatedEPS, Surprise = row.surprise, surprise_percentage = row.surprisePercentage)
+            # Create Earnings entries
+            for row in file.itertuples():
+                Earnings.objects.create(
+                    symbol=ticker,
+                    fiscal_Date_Ending=datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'),
+                    reported_eps=row.reportedEPS or 0,
+                    estimated_eps=row.estimatedEPS or 0,
+                    surprise=row.surprise or 0,
+                    surprise_percentage=row.surprisePercentage or 0
+                )
 
         condition = {
             "symbol": f'{ticker}',

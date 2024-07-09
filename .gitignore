@@ -10,3 +10,4 @@ keys.py
 weights.txt
 debug.log
 test.py
+output.csv
