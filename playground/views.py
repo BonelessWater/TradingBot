@@ -531,7 +531,7 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
             file = pd.read_csv('temp_csv.txt')            
 
             for row in file.itertuples():    
-                a = IncomeStatement.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, gross_Profit = row.grossProfit, total_Revenue = row.totalRevenue, 
+                a = IncomeStatement.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, gross_Profit = row.grossProfit, total_Revenue = row.totalRevenue, 
                                             cost_Of_Revenue = row.costOfRevenue, operating_Income = row.operatingIncome, operating_Expenses = row.operatingExpenses, Depreciation = row.depreciation, net_Income = row.netIncome)
 
         condition = {
@@ -575,7 +575,7 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
             file = pd.read_csv('temp_csv.txt')            
 
             for row in file.itertuples():    
-                a = BalanceSheet.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, 
+                a = BalanceSheet.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, 
                 total_Assets = row.totalAssets, total_Current_Assets = row.totalCurrentAssets, Investments = row.investments, current_Debt = row.currentDebt, treasury_Stock = row.treasuryStock, common_Stock = row.commonStock)
 
         condition = {
@@ -618,7 +618,7 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
             file = pd.read_csv('temp_csv.txt')            
 
             for row in file.itertuples():    
-                a = CashFlow.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), operating_Cashflow = row.operatingCashflow, capital_Expenditures = row.capitalExpenditures, change_In_Inventory = row.changeInInventory, 
+                a = CashFlow.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), operating_Cashflow = row.operatingCashflow, capital_Expenditures = row.capitalExpenditures, change_In_Inventory = row.changeInInventory, 
                                             profit_Loss = row.profitLoss, cashflow_From_Investment = row.cashflowFromInvestment, cashflow_From_Financing = row.cashflowFromFinancing, dividend_Payout = row.dividendPayout)
 
         condition = {
@@ -661,7 +661,7 @@ def data_output(ticker='VZ', data_type='CASH_FLOW'):
             file = pd.read_csv('temp_csv.txt')            
 
             for row in file.itertuples():    
-                a = Earnings.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_eps = row.reportedEPS, estimated_eps = row.estimatedEPS, Surprise = row.surprise, surprise_percentage = row.surprisePercentage)
+                a = Earnings.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_eps = row.reportedEPS, estimated_eps = row.estimatedEPS, Surprise = row.surprise, surprise_percentage = row.surprisePercentage)
 
         condition = {
             "symbol": f'{ticker}',
@@ -685,21 +685,23 @@ def research(request):
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # This part runs only if an AJAX request is detected
-        data = {
-            'chart_data': [10, 20, 30, 40],  # Example data for AJAX request
-        }
-        return JsonResponse(data)
+        data_type = request.GET.get('action')[1:]
+        ticker = request.GET.get('ticker')
+        print(ticker)
+        data_values = data_output(ticker=ticker, data_type=data_type)
 
-    if request.method == 'POST' and request.headers.get('Content-Type') == 'application/json':
-        data = json.loads(request.body)
-        button_pressed = data.get('button')
-        selected_ticker = data.get('ticker')
-        data_values = data_output(selected_ticker, button_pressed)
+        if data_type == 'INCOME_STATEMENT':
+            keys = ['data_type','ticker','net_income_data','total_revenue_data','cost_of_revenue_data','operating_income_data','gross_profit_data','operating_expenses_data','depreciation_data']
+        if data_type == 'BALANCE_SHEET':
+            keys = ['data_type','ticker','total_assets_data','total_current_assets_data','investment_data','current_debt_data','treasury_stock_data','common_stock_data']
+        elif data_type == 'CASH_FLOW':
+            keys = ['data_type','ticker','operating_cashflow_data','capital_expenditures_data','change_in_inventory_data','profit_loss_data','cashflow_from_investments_data','cashflow_from_financing_data','dividend_payout_data']
+        elif data_type == 'EARNINGS':
+            keys = ['data_type','ticker','reported_eps_data','estimated_eps_data','surprise_data','surprise_percentage_data']
 
-        return JsonResponse({
-            'data_type': button_pressed,
-            'data_values': data_values
-        })
+        data_response = {k: v for k, v in zip(keys, data_values)}
+
+        return JsonResponse(data_response)
 
     # Handle form submissions
     if request.method == 'POST':
@@ -707,8 +709,8 @@ def research(request):
         if research_form.is_valid():
             selected_ticker = research_form.cleaned_data['ticker']
             # Simplified the setting of default values
-            sma_value = research_form.cleaned_data.get('SMAValue', 50)
-            ema_value = research_form.cleaned_data.get('EMAValue', 50)
+            sma_value = 200 if research_form.cleaned_data.get('SMAValue', 50) is None else research_form.cleaned_data.get('SMAValue', 50)
+            ema_value = 50 if research_form.cleaned_data.get('EMAValue', 50) is None else research_form.cleaned_data.get('EMAValue', 50)
             bollinger_bands_value = research_form.cleaned_data.get('BollingerBandsValue', 0)
             rsi_value = research_form.cleaned_data.get('RSIValue', 0)
             macd_value = research_form.cleaned_data.get('MACDValue', 0)
@@ -725,7 +727,7 @@ def research(request):
                 'title': selected_ticker,
                 'financial_data': financial_data,
                 'valuation': valuation,
-                'finance': finance
+                'finance': finance,
             })
         else:
             print(research_form.errors)
