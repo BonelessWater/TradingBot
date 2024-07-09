@@ -244,9 +244,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 
-    var datactx = document.getElementById('financialChart').getContext('2d');
-    var financialChart;
     
+    var financialChart;
+    if (financialChart != null){
+        var datactx = document.getElementById('financialChart').getContext('2d');
+    }
     function createChart(data) {
         data_type = data.data_type;
         console.log(data_type);

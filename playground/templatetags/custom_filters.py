@@ -5,6 +5,8 @@ register = template.Library()
 @register.filter
 def format_number(value):
     try:
+        if value == None:
+            return 'N/A'
         value = float(value)
         if abs(value) >= 1_000_000_000_000:
             return f'{value / 1_000_000_000_000:.1f}T'

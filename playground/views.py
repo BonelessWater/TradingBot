@@ -80,12 +80,12 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
     # Populate the 'data' dictionary
     data = {
         'ticker': financial_data.ticker,
-        'market cap': financial_data.market_cap,
-        'enterprise value': financial_data.enterprise_value,
-        'trailing P/E': financial_data.trailing_pe,
-        'forward P/E': financial_data.forward_pe,
-        'PEG ratio': financial_data.peg_ratio,
-        'price sales': financial_data.price_sales,
+        'marketcap': financial_data.market_cap,
+        'enterprisevalue': financial_data.enterprise_value,
+        'trailingpe': financial_data.trailing_pe,
+        'forwardpe': financial_data.forward_pe,
+        'pegratio': financial_data.peg_ratio,
+        'pricesales': financial_data.price_sales,
     }
     
     # Populate the 'other' dictionary
@@ -680,8 +680,8 @@ def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
     tickers = json.dumps([item[0] for item in tickers_and_names])
     names = json.dumps([item[1] for item in tickers_and_names])
+    selected_ticker = None
     selected_ticker = request.GET.get('ticker', None)
-
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         # This part runs only if an AJAX request is detected
@@ -708,7 +708,7 @@ def research(request):
         research_form = ResearchForm(request.POST)
         if research_form.is_valid():
             selected_ticker = research_form.cleaned_data['ticker']
-            # Simplified the setting of default values
+
             sma_value = 200 if research_form.cleaned_data.get('SMAValue', 50) is None else research_form.cleaned_data.get('SMAValue', 50)
             ema_value = 50 if research_form.cleaned_data.get('EMAValue', 50) is None else research_form.cleaned_data.get('EMAValue', 50)
             bollinger_bands_value = research_form.cleaned_data.get('BollingerBandsValue', 0)
@@ -731,7 +731,28 @@ def research(request):
             })
         else:
             print(research_form.errors)
+    elif request.method == "GET" and selected_ticker is not None:
+        sma_value = 200
+        ema_value = 50 
+        bollinger_bands_value = 0
+        rsi_value = 0
+        macd_value = 0
+        stochastic_value = 0
 
+        chart_data = get_stock_data(selected_ticker, sma_value, ema_value, rsi_value, bollinger_bands_value, macd_value, stochastic_value)
+        valuation, finance, financial_data = get_financial_data(selected_ticker)
+
+        return render(request, 'research.html', {
+            'is_post': True,
+            'tickers': tickers,
+            'names': names,
+            'chart_data': chart_data,
+            'title': selected_ticker,
+            'financial_data': financial_data,
+            'valuation': valuation,
+            'finance': finance,
+        })
+    
     # Default GET request
     chart_data = get_sp500_data() if not selected_ticker else get_stock_data(selected_ticker, 50, 50, 0, 0, 0, 0)
     valuation, finance, financial_data = get_financial_data(selected_ticker) if selected_ticker else ({}, {}, 'none')

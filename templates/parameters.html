@@ -38,7 +38,7 @@ Parameters | Portfolio Builder
                 <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
-            <button class="btn waves-effect waves-light" type="submit" name="action">Submit</button>
+            <button class="btn waves-effect waves-light red lighten-1" type="submit" name="action">Submit</button>
         </div>
     </form>
 </div>
@@ -46,6 +46,11 @@ Parameters | Portfolio Builder
 
 {% block content %}
     {% if is_post %}
+    <style>
+        .btn {
+            width: 80px; 
+        }
+    </style>
     <div class="container">
         <!--Sharpe-->
         <div class="col s12">
@@ -84,7 +89,11 @@ Parameters | Portfolio Builder
                         <tbody>
                             {% for key, item in sharpe_dict.financial_data_sharpe.items %}
                             <tr>
-                                <td><a href="{% url 'research' %}?ticker={{ item.ticker }}">{{ item.ticker }}</a></td>
+                                <td>
+                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small red lighten-1">
+                                        {{ item.ticker }}
+                                    </a>
+                                </td>
                                 <td>{{ item.percentage|format_number }}</td>
                                 <td>{{ item.investmentamount|format_number }}</td>
                                 <td>{{ item.marketcap|format_number }}</td>
@@ -138,7 +147,11 @@ Parameters | Portfolio Builder
                         <tbody>
                             {% for key, item in return_dict.financial_data_return.items %}
                             <tr>
-                                <td><a href="{% url 'research' %}?ticker={{ item.ticker }}">{{ item.ticker }}</a></td>
+                                <td>
+                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small red lighten-1">
+                                        {{ item.ticker }}
+                                    </a>
+                                </td>
                                 <td>{{ item.percentage|format_number }}</td>
                                 <td>{{ item.investmentamount|format_number }}</td>
                                 <td>{{ item.marketcap|format_number }}</td>
@@ -364,11 +377,12 @@ Parameters | Portfolio Builder
                             <ul>
                                 <li>Pick a confidence level between 0 and 1.</li>
                                 <li>Try values of target volatility of 1 or greater.</li>
+                                <li>Lower values do mean better but sometimes low volatility objectives cannot be met</li>
                             </ul>
                         </div>                        
                     </div>
                     <div class="card-action center">
-                        <button id="toggle-button" class="btn waves-effect waves-light red" type="submit" name="action">Construct Portfolio
+                        <button id="toggle-button" class="btn waves-effect waves-light red lighten-1" type="submit" name="action">Construct Portfolio
                             <i class="material-icons right">build</i>
                         </button>
                     </div>
