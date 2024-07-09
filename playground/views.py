@@ -1,7 +1,11 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from .forms import ParametersForm, ResearchForm
-from .models import CovarianceData, SP500Ticker, FinancialData
+from .models import CovarianceData, SP500Ticker, FinancialData, IncomeStatement, BalanceSheet, CashFlow, Earnings
+import requests
+from pathlib import Path
+import os
+from dotenv import load_dotenv
 import logging
 import yfinance as yf
 import time as t
@@ -12,16 +16,17 @@ from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date, time
-from statistics import NormalDist
 from datetime import datetime, timedelta
 import decimal
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
+ALPHA_KEY = os.getenv('ALPHA_KEY')
 
 logger = logging.getLogger(__name__)
 
 def main(request):
-    #CovarianceData.flush()
-    #SP500Ticker.flush()
-    #store_tickers_in_db()
     return render(request, 'main.html')
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
@@ -47,40 +52,40 @@ def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
     
     # Populate the 'valuation' dictionary
     valuation = {
-        'ticker': financial_data.ticker,
-        'marketcap': financial_data.market_cap,
-        'enterprisevalue': financial_data.enterprise_value,
-        'trailingpe': financial_data.trailing_pe,
-        'forwardpe': financial_data.forward_pe,
-        'pegratio': financial_data.peg_ratio,
-        'pricesales': financial_data.price_sales,
-        'pricebook': financial_data.price_book,
-        'enterpriserevenue': financial_data.ev_revenue,
-        'enterpriseebitda': financial_data.ev_ebitda,
+        'Ticker': financial_data.ticker,
+        'Market Cap': financial_data.market_cap,
+        'Enterprise Value': financial_data.enterprise_value,
+        'Trailing P/E': financial_data.trailing_pe,
+        'Forward P/E': financial_data.forward_pe,
+        'PEG Ratio': financial_data.peg_ratio,
+        'Price Sales': financial_data.price_sales,
+        'Price Book': financial_data.price_book,
+        'Enterprise Revenue': financial_data.ev_revenue,
+        'Enterprise EBITDA': financial_data.ev_ebitda,
     }
     
     # Populate the 'finance' dictionary
     finance = {
-        'profit margin': financial_data.profit_margin,
-        'return on assets (ttm)': financial_data.return_on_assets,
-        'return on equity (ttm)': financial_data.return_on_equity,
-        'revenue (ttm)': financial_data.revenue,
-        'net income avi to common (ttm)': financial_data.net_income,
-        'diluted eps (ttm)': financial_data.diluted_eps,
-        'total cash (mrq)': financial_data.total_cash,
-        'total debt/equity (mrq)': financial_data.debt_to_equity,
-        'levered free cash flow (ttm)': financial_data.levered_free_cash_flow,
+        'Profit Margin': financial_data.profit_margin,
+        'Return on Assets (TTM)': financial_data.return_on_assets,
+        'Return on Equity (TTM)': financial_data.return_on_equity,
+        'Revenue (TTM)': financial_data.revenue,
+        'Net Income AVI to Common (TTM)': financial_data.net_income,
+        'Diluted EPS (TTM)': financial_data.diluted_eps,
+        'Total Cash (MRQ)': financial_data.total_cash,
+        'Total Debt/Equity (MRQ)': financial_data.debt_to_equity,
+        'Levered Free Cash Flow (MRQ)': financial_data.levered_free_cash_flow,
     }
     
     # Populate the 'data' dictionary
     data = {
         'ticker': financial_data.ticker,
-        'marketcap': financial_data.market_cap,
-        'enterprisevalue': financial_data.enterprise_value,
-        'trailingpe': financial_data.trailing_pe,
-        'forwardpe': financial_data.forward_pe,
-        'pegratio': financial_data.peg_ratio,
-        'pricesales': financial_data.price_sales,
+        'market cap': financial_data.market_cap,
+        'enterprise value': financial_data.enterprise_value,
+        'trailing P/E': financial_data.trailing_pe,
+        'forward P/E': financial_data.forward_pe,
+        'PEG ratio': financial_data.peg_ratio,
+        'price sales': financial_data.price_sales,
     }
     
     # Populate the 'other' dictionary
@@ -504,42 +509,241 @@ def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_osci
 
     return json.dumps(data)
 
+def data_output(ticker='VZ', data_type='CASH_FLOW'):
+    if data_type == 'INCOME_STATEMENT':
+        exist = IncomeStatement.objects.filter(symbol=ticker).exists()
+        function = data_type
+        if exist == False:
+            
+            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json()['annualReports']
+            # convert to csv
+            f = open("temp_csv.txt", 'w')
+            options = ['fiscalDateEnding','reportedCurrency','grossProfit','totalRevenue','costOfRevenue','operatingIncome','operatingExpenses','depreciation','netIncome']
+            f.write(f"{','.join(options)}\n")
+            
+            for entry in data:
+                line = ",".join([entry[key] for key in entry.keys() if key in options])
+                f.write(line + "\n")
+
+            f.close()
+
+            file = pd.read_csv('temp_csv.txt')            
+
+            for row in file.itertuples():    
+                a = IncomeStatement.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, gross_Profit = row.grossProfit, total_Revenue = row.totalRevenue, 
+                                            cost_Of_Revenue = row.costOfRevenue, operating_Income = row.operatingIncome, operating_Expenses = row.operatingExpenses, Depreciation = row.depreciation, net_Income = row.netIncome)
+
+        condition = {
+            "symbol": f'{ticker}',
+        }
+
+        queryset = IncomeStatement.objects.filter(**condition)
+
+        function = 'Income Statement'
+        net_income_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.net_Income} for obj in queryset][::-1]     
+        total_revenue_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.total_Revenue} for obj in queryset][::-1]
+        cost_of_revenue_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.cost_Of_Revenue} for obj in queryset][::-1]
+        operating_income_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.operating_Income} for obj in queryset][::-1]
+        gross_profit_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.gross_Profit} for obj in queryset][::-1]
+        operating_expenses_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.operating_Expenses} for obj in queryset][::-1]
+        depreciation_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.Depreciation} for obj in queryset][::-1]
+
+        return [function, ticker, json.dumps(net_income_data), json.dumps(total_revenue_data), json.dumps(cost_of_revenue_data), json.dumps(operating_income_data), json.dumps(gross_profit_data), json.dumps(operating_expenses_data), json.dumps(depreciation_data) ]
+    elif data_type == 'BALANCE_SHEET':
+        exist = BalanceSheet.objects.filter(symbol=ticker).exists()
+        function = data_type
+        if exist == False:
+            
+            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json()['annualReports']
+            # convert to csv
+            f = open("temp_csv.txt", 'w')
+            options = ['fiscalDateEnding','reportedCurrency','totalAssets','totalCurrentAssets','investments','currentDebt','treasuryStock','commonStock']
+            f.write(f"{','.join(options)}\n")
+            
+            for entry in data:
+                info = [entry[key] for key in entry.keys() if key in options]
+                for i in range(len(info)): # Removing None values
+                    if info[i] == 'None':
+                        info[i] = '0'
+                line = ",".join(info)
+                f.write(line + "\n")
+
+            f.close()
+
+            file = pd.read_csv('temp_csv.txt')            
+
+            for row in file.itertuples():    
+                a = BalanceSheet.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_Currency = row.reportedCurrency, 
+                total_Assets = row.totalAssets, total_Current_Assets = row.totalCurrentAssets, Investments = row.investments, current_Debt = row.currentDebt, treasury_Stock = row.treasuryStock, common_Stock = row.commonStock)
+
+        condition = {
+            "symbol": f'{ticker}',
+        }
+
+        queryset = BalanceSheet.objects.filter(**condition)
+
+        function = 'Balance Sheet'
+        total_assets_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.total_Assets} for obj in queryset][::-1]     
+        total_current_assets_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.total_Current_Assets} for obj in queryset][::-1]
+        investment_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.Investments} for obj in queryset][::-1]
+        current_debt_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.current_Debt} for obj in queryset][::-1]
+        treasury_stock_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.treasury_Stock} for obj in queryset][::-1]
+        common_stock_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.common_Stock} for obj in queryset][::-1]
+
+        return [function, ticker, json.dumps(total_assets_data), json.dumps(total_current_assets_data), json.dumps(investment_data), json.dumps(current_debt_data), json.dumps(treasury_stock_data), json.dumps(common_stock_data)]
+    elif data_type == 'CASH_FLOW':
+        exist = CashFlow.objects.filter(symbol=ticker).exists()
+        function = data_type
+        if exist == False:
+            
+            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json()['annualReports']
+            # convert to csv
+            f = open("temp_csv.txt", 'w')
+            options = ['fiscalDateEnding','operatingCashflow','capitalExpenditures','changeInInventory','profitLoss','cashflowFromInvestment','cashflowFromFinancing','dividendPayout']
+            f.write(f"{','.join(options)}\n")
+            
+            for entry in data:
+                info = [entry[key] for key in entry.keys() if key in options]
+                for i in range(len(info)): # Removing None values
+                    if info[i] == 'None':
+                        info[i] = '0'
+                line = ",".join(info)
+                f.write(line + "\n")
+
+            f.close()
+
+            file = pd.read_csv('temp_csv.txt')            
+
+            for row in file.itertuples():    
+                a = CashFlow.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), operating_Cashflow = row.operatingCashflow, capital_Expenditures = row.capitalExpenditures, change_In_Inventory = row.changeInInventory, 
+                                            profit_Loss = row.profitLoss, cashflow_From_Investment = row.cashflowFromInvestment, cashflow_From_Financing = row.cashflowFromFinancing, dividend_Payout = row.dividendPayout)
+
+        condition = {
+            "symbol": f'{ticker}',
+        }
+
+        queryset = CashFlow.objects.filter(**condition)
+
+        function = 'Cash Flow'
+        operating_cashflow_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.operating_Cashflow} for obj in queryset][::-1]     
+        capital_expenditures_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.capital_Expenditures} for obj in queryset][::-1]
+        change_in_inventory_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.change_In_Inventory} for obj in queryset][::-1]
+        profit_loss_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.profit_Loss} for obj in queryset][::-1]
+        cashflow_from_investment_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.cashflow_From_Investment} for obj in queryset][::-1]
+        cashflow_from_financing_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.cashflow_From_Financing} for obj in queryset][::-1]
+        dividend_payout_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.dividend_Payout} for obj in queryset][::-1]
+        return [function, ticker, json.dumps(operating_cashflow_data), json.dumps(capital_expenditures_data), json.dumps(change_in_inventory_data), json.dumps(profit_loss_data), json.dumps(cashflow_from_investment_data), json.dumps(cashflow_from_financing_data), json.dumps(dividend_payout_data)]
+    elif data_type == 'EARNINGS':
+        exist = Earnings.objects.filter(symbol=ticker).exists()
+        function = data_type
+        if exist == False:
+            
+            response = requests.get(f'https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={ALPHA_KEY}')
+            data = response.json()['quarterlyEarnings']
+            # convert to csv
+            f = open("temp_csv.txt", 'w')
+            options = ['fiscalDateEnding','reportedEPS','estimatedEPS','surprise','surprisePercentage']
+            f.write(f"{','.join(options)}\n")
+            
+            for entry in data:
+                info = [entry[key] for key in entry.keys() if key in options]
+                for i in range(len(info)): # Removing None values
+                    if info[i] == 'None':
+                        info[i] = '0'
+                line = ",".join(info)
+                f.write(line + "\n")
+
+            f.close()
+
+            file = pd.read_csv('temp_csv.txt')            
+
+            for row in file.itertuples():    
+                a = Earnings.objects.create(symbol=ticker, fiscal_Date_Ending = datetime.datetime.strptime(row.fiscalDateEnding, '%Y-%m-%d'), reported_eps = row.reportedEPS, estimated_eps = row.estimatedEPS, Surprise = row.surprise, surprise_percentage = row.surprisePercentage)
+
+        condition = {
+            "symbol": f'{ticker}',
+        }
+
+        queryset = Earnings.objects.filter(**condition)
+
+        function = 'Earnings'
+        reported_eps_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.reported_eps} for obj in queryset][::-1]     
+        estimated_eps_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.estimated_eps} for obj in queryset][::-1]
+        surprise_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.Surprise} for obj in queryset][::-1]
+        surprise_percentage_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.surprise_percentage} for obj in queryset][::-1]
+        return [function, ticker, json.dumps(reported_eps_data), json.dumps(estimated_eps_data), json.dumps(surprise_data), json.dumps(surprise_percentage_data)]
+
 def research(request):
-    tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name')) # Query them together to not lose ordering
-    
+    tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
     tickers = json.dumps([item[0] for item in tickers_and_names])
     names = json.dumps([item[1] for item in tickers_and_names])
-
-    # Extract the ticker from query parameters
     selected_ticker = request.GET.get('ticker', None)
 
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # This part runs only if an AJAX request is detected
+        data = {
+            'chart_data': [10, 20, 30, 40],  # Example data for AJAX request
+        }
+        return JsonResponse(data)
+
+    if request.method == 'POST' and request.headers.get('Content-Type') == 'application/json':
+        data = json.loads(request.body)
+        button_pressed = data.get('button')
+        selected_ticker = data.get('ticker')
+        data_values = data_output(selected_ticker, button_pressed)
+
+        return JsonResponse({
+            'data_type': button_pressed,
+            'data_values': data_values
+        })
+
+    # Handle form submissions
     if request.method == 'POST':
-        
         research_form = ResearchForm(request.POST)
         if research_form.is_valid():
             selected_ticker = research_form.cleaned_data['ticker']
-            sma_value = research_form.cleaned_data.get('SMAValue')
-            ema_value = research_form.cleaned_data.get('EMAValue')
-            bollinger_bands_value = research_form.cleaned_data.get('BollingerBandsValue')
-            rsi_value = research_form.cleaned_data.get('RSIValue')
-            macd_value = research_form.cleaned_data.get('MACDValue')
-            stochastic_value = research_form.cleaned_data.get('StochasticValue')
+            # Simplified the setting of default values
+            sma_value = research_form.cleaned_data.get('SMAValue', 50)
+            ema_value = research_form.cleaned_data.get('EMAValue', 50)
+            bollinger_bands_value = research_form.cleaned_data.get('BollingerBandsValue', 0)
+            rsi_value = research_form.cleaned_data.get('RSIValue', 0)
+            macd_value = research_form.cleaned_data.get('MACDValue', 0)
+            stochastic_value = research_form.cleaned_data.get('StochasticValue', 0)
 
             chart_data = get_stock_data(selected_ticker, sma_value, ema_value, rsi_value, bollinger_bands_value, macd_value, stochastic_value)
-
             valuation, finance, financial_data = get_financial_data(selected_ticker)
 
-
-            return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
+            return render(request, 'research.html', {
+                'is_post': True,
+                'tickers': tickers,
+                'names': names,
+                'chart_data': chart_data,
+                'title': selected_ticker,
+                'financial_data': financial_data,
+                'valuation': valuation,
+                'finance': finance
+            })
         else:
-            print(research_form.errors) 
+            print(research_form.errors)
 
-    elif selected_ticker:
-        chart_data = get_stock_data(selected_ticker,50,50,0,0,0,0)
-        valuation, finance, financial_data = get_financial_data(selected_ticker)
-        return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': chart_data, 'title': selected_ticker, 'financial_data': financial_data, 'valuation': valuation, 'finance': finance})
-    
-    return render(request, 'research.html', {'tickers': tickers, 'names': names, 'chart_data': get_sp500_data(), 'title': 'S&P 500', 'financial_data': 'none'})
+    # Default GET request
+    chart_data = get_sp500_data() if not selected_ticker else get_stock_data(selected_ticker, 50, 50, 0, 0, 0, 0)
+    valuation, finance, financial_data = get_financial_data(selected_ticker) if selected_ticker else ({}, {}, 'none')
+
+    return render(request, 'research.html', {
+        'is_post': False,
+        'tickers': tickers,
+        'names': names,
+        'chart_data': chart_data,
+        'title': selected_ticker or 'S&P 500',
+        'financial_data': financial_data,
+        'valuation': valuation,
+        'finance': finance
+    })
 
 def indicator(request):
     return render(request, 'indicator.html')

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block title %}
 Research | Portfolio Builder
@@ -151,6 +152,11 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock sidebar %}
 
 {% block content %}
+<style>
+    .move-down{
+        margin-top: 50px;
+    }
+</style>
 <div class="container">
     <div class="col s12">
         <div class="row">
@@ -164,64 +170,99 @@ document.addEventListener('DOMContentLoaded', function() {
             <h6 class="center" id="dataInfo"></h6>
         </div>
     </div>
-
-    <div class="row">
-        <div class="col s6">
-            <h5 class="left-align">Valuation Measures</h5>
-            <h6 class="right-align">Most recent</h6>
-
+    {% if is_post %}
+        <div class="row">
             <div class="col s6">
-                <h6 class="left-align">Ticker</h6>
-                <h6 class="left-align">Market Cap</h6>
-                <h6 class="left-align">Enterprise Value</h6>
-                <h6 class="left-align">Trailing P/E</h6>
-                <h6 class="left-align">Forward P/E</h6>
-                <h6 class="left-align">PEG Ratio (5yr Expected)</h6>
-                <h6 class="left-align">Price/Sales (ttm)</h6>
-                <h6 class="left-align">Price/Bool (mrq)</h6>
-                <h6 class="left-align">Enterprise Value/Revenue</h6>
-                <h6 class="left-align">Enterprise Value/EBITDA</h6>
-                
+                <h5>Valuation Measures</h5>
+                <table class="highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="left-align">Measure</th>
+                            <th class="right-align">Most Recent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, item in valuation.items %}
+                            <tr>
+                                <td class="left-align">{{ key }}</td>
+                                <td class="right-align">{{ item|format_number }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
             <div class="col s6">
-                    {% for key, item in valuation.items %}
-                        <h6 class="right-align">{{ item|format_number }}</h6>
-                    {% endfor %}
+                <h5>Financial Highlights</h5>
+                <table class="highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th class="left-align">Metric</th>
+                            <th class="right-align">Most Recent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for key, item in finance.items %}
+                            <tr>
+                                <td class="left-align">{{ key }}</td>
+                                <td class="right-align">{{ item|format_number }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="col s6">
-            <h5 class="left-align">Financial Highlights</h5>
-            <h6 class="right-align">Most recent</h6>
-
-            <div class="col s6">
-                <h6 class="left-align">Profit Margin</h6>
-                <h6 class="left-align">Return on Assets (ttm)</h6>
-                <h6 class="left-align">Return on Equity (ttm)</h6>
-                <h6 class="left-align">Revenue (ttm)</h6>
-                <h6 class="left-align">Net Income Avi to Common (ttm)</h6>
-                <h6 class="left-align">Diluted EPS (ttm)</h6>
-                <h6 class="left-align">Total Cash (mrq)</h6>
-                <h6 class="left-align">Total Debt/Equity (mrq)</h6>
-                <h6 class="left-align">Levered Free Cash Flow (ttm)</h6>
+        <div class="row">
+            <div class="move-down">
                 
-            </div>
+                <div class="row">
+                    <div class="col s3 center">
+                        <button name="button" value="CASH_FLOW" class="waves-effect waves-light btn-large red lighten-1">Cash Flow</button>
+                    </div>
+                    <div class="col s3 center">
+                        <button name="button" value="INCOME_STATEMENT" class="waves-effect waves-light btn-large red lighten-1">Income Statement</button>
+                    </div>
+                    <div class="col s3 center">
+                        <button name="button" value="BALANCE_SHEET" class="waves-effect waves-light btn-large red lighten-1">Balance Sheet</button>
+                    </div>
+                    <div class="col s3 center">
+                        <button name="button" value="EARNINGS" class="waves-effect waves-light btn-large red lighten-1">Earnings</button>
+                    </div>
+                </div>
+                
+                <button id="loadData">Load New Chart</button>
+                <div id="chartContainer">Initial Chart Data: {{ data.initial_chart_data }}</div>
 
-            <div class="col s6">
-                    {% for key, item in finance.items %}
-                        <h6 class="right-align">{{ item|format_number }}</h6>
-                    {% endfor %}
+
+                <canvas id="dataChart"></canvas>
+
+                
+
             </div>
         </div> 
-    </div>
+    {% endif %}
 </div>
 
 <div class="fixed-action-btn">
-    <a id="toggle-button" class="btn-floating  btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
+    <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light red lighten-1 bottom right "><i class="material-icons">add</i></a>
 </div>
 <script src="https://unpkg.com/chartjs-plugin-zoom"></script>
+
 <script>
+    document.getElementById('loadData').addEventListener('click', function() {
+        fetch('{% url "research" %}', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('chartContainer').innerHTML = 'New Chart Data: ' + data.chart_data;
+        })
+        .catch(error => console.error('Error:', error));
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         var elems = document.querySelectorAll('select');
         M.FormSelect.init(elems);
@@ -433,5 +474,236 @@ document.addEventListener('DOMContentLoaded', function() {
         rangeBar.style.width = `${widthPercent}%`;
     }
         
+</script>
+<script>
+    let ctx = document.getElementById('dataChart').getContext('2d');
+    var data_type = '{{ data_type|escapejs }}'
+
+    if (data_type == 'INCOME_STATEMENT'){
+        var net_income_data = JSON.parse('{{ net_income_data|escapejs }}');
+        var total_revenue_data = JSON.parse('{{ total_revenue_data|escapejs }}');
+        var cost_of_revenue_data = JSON.parse('{{ cost_of_revenue_data|escapejs }}');
+        var operating_income_data = JSON.parse('{{ operating_income_data|escapejs }}');
+        var gross_profit_data = JSON.parse('{{ gross_profit_data|escapejs }}');
+        var operating_expenses_data = JSON.parse('{{ operating_expenses_data|escapejs }}');
+        var depreciation_data = JSON.parse('{{ depreciation_data|escapejs }}');
+
+        
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Net Income',
+                    backgroundColor: 'rgba(144, 238, 144, 0.5)',
+                    borderColor: 'rgba(144, 238, 144, 1)',
+                    data: net_income_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Total Revenue Income',
+                    backgroundColor: 'rgba(173, 216, 230, 0.5)',
+                    borderColor: 'rgba(173, 216, 230, 1)',
+                    data: total_revenue_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Cost of Revenue',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: cost_of_revenue_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Operating Income',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: operating_income_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Gross Profit',
+                    backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    data: gross_profit_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Operating Expenses',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: operating_expenses_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Depreciation',
+                    backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    data: depreciation_data, // Data from Django view
+                    borderWidth: 1
+                },
+                ]
+            },
+        });
+    } else if (data_type == 'BALANCE_SHEET'){
+        var total_assets_data = JSON.parse('{{ total_assets_data|escapejs }}');
+        var total_current_assets_data = JSON.parse('{{ total_current_assets_data|escapejs }}');
+        var investment_data = JSON.parse('{{ investment_data|escapejs }}');
+        var current_debt_data = JSON.parse('{{ current_debt_data|escapejs }}');
+        var treasury_stock_data = JSON.parse('{{ treasury_stock_data|escapejs }}');
+        var common_stock_data = JSON.parse('{{ common_stock_data|escapejs }}');
+        
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Total Assets',
+                    backgroundColor: 'rgba(144, 238, 144, 0.5)',
+                    borderColor: 'rgba(144, 238, 144, 1)',
+                    data: total_assets_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Total Current Assets',
+                    backgroundColor: 'rgba(173, 216, 230, 0.5)',
+                    borderColor: 'rgba(173, 216, 230, 1)',
+                    data: total_current_assets_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Investments',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: investment_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Current Debt',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: current_debt_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Treasury Stock',
+                    backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    data: treasury_stock_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Common Stock',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: common_stock_data, // Data from Django view
+                    borderWidth: 1
+                }
+                ]
+            },
+        });
+    } else if (data_type == 'CASH_FLOW'){
+        var  operating_cashflow_data = JSON.parse('{{ operating_cashflow_data|escapejs }}');
+        var  capital_expenditures_data = JSON.parse('{{ capital_expenditures_data|escapejs }}');
+        var  change_in_inventory_data = JSON.parse('{{ change_in_inventory_data|escapejs }}');
+        var  profit_loss_data = JSON.parse('{{ profit_loss_data|escapejs }}');
+        var  cashflow_from_investments_data = JSON.parse('{{ cashflow_from_investments_data|escapejs }}');
+        var  cashflow_from_financing_data = JSON.parse('{{ cashflow_from_financing_data|escapejs }}');
+        var  dividend_payout_data = JSON.parse('{{ dividend_payout_data|escapejs }}');
+        
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Operating Cashflow',
+                    backgroundColor: 'rgba(144, 238, 144, 0.5)',
+                    borderColor: 'rgba(144, 238, 144, 1)',
+                    data: operating_cashflow_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Capital Expenditures',
+                    backgroundColor: 'rgba(173, 216, 230, 0.5)',
+                    borderColor: 'rgba(173, 216, 230, 1)',
+                    data: capital_expenditures_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Change In Inventory',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: change_in_inventory_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Profit-Loss',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: profit_loss_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Cashflow From Investments',
+                    backgroundColor: 'rgba(255, 206, 86, 0.5)',
+                    borderColor: 'rgba(255, 206, 86, 1)',
+                    data: cashflow_from_investments_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Cashflow From Financing',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: cashflow_from_financing_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Dividend Payout',
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    data: dividend_payout_data, // Data from Django view
+                    borderWidth: 1
+                }
+                ]
+            },
+        });
+    } else if (data_type == 'Earnings'){
+        var  reported_eps_data = JSON.parse('{{ reported_eps_data|escapejs }}');
+        var  estimated_eps_data = JSON.parse('{{ estimated_eps_data|escapejs }}');
+        var  surprise_data = JSON.parse('{{ surprise_data|escapejs }}');
+        var  surprise_percentage_data = JSON.parse('{{ surprise_percentage_data|escapejs }}');
+        
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Reported EPS',
+                    backgroundColor: 'rgba(144, 238, 144, 0.5)',
+                    borderColor: 'rgba(144, 238, 144, 1)',
+                    data: reported_eps_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Estimated EPS',
+                    backgroundColor: 'rgba(173, 216, 230, 0.5)',
+                    borderColor: 'rgba(173, 216, 230, 1)',
+                    data: estimated_eps_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Surprise',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: surprise_data, // Data from Django view
+                    borderWidth: 1
+                },
+                {
+                    label: 'Surprise Percentage',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: surprise_percentage_data, // Data from Django view
+                    borderWidth: 1
+                }
+                ]
+            },
+        });
+    }
 </script>
 {% endblock content %}
