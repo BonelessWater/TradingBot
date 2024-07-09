@@ -360,24 +360,33 @@ Parameters | Portfolio Builder
         });
     </script>
     {% else %}
+    <style>
+        .seperate1 {
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+        .seperate {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+    </style>
     <div class="container">
         <div class="row">
             <div class="col s12 m8 offset-m2">
                 <div class="card">
                     <div class="card-content">
-                        <span class="card-title">Portfolio Optimizer</span>
-                        <p>Use the button on the bottom right to construct your portfolio according to your needs.</p>
+                        <span class="card-title center">Portfolio Optimizer</span>
+                        <p class="center">You can the button on the bottom right to construct your portfolio!</p>
                         {% if error %}
                             <div class="card-panel red lighten-4">
                                 <span class="red-text text-darken-4">{{ message }}</span>
                             </div>
                         {% endif %}
                         <div class="advice-section">
-                            <h6>Helpful Tips:</h6>
+                            <h6 class="seperate1">Helpful Tips:</h6>
                             <ul>
-                                <li>Pick a confidence level between 0 and 1.</li>
-                                <li>Try values of target volatility of 1 or greater.</li>
-                                <li>Lower valeus are better but somtimes they are no feasible.</li>
+                                <li class="seperate">Pick a confidence level between 0 and 1.</li>
+                                <li class="seperate">Try values of target volatility of 1 or greater; lower values are better but sometimes they are not feasible.</li>
                             </ul>
                         </div>                        
                     </div>
