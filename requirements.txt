@@ -26,3 +26,4 @@ apscheduler==3.10.4
 tenacity==8.4.2
 newsapi-python==0.2.7
 newspaper3k==0.2.8
+apscheduler==3.10.4

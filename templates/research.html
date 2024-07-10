@@ -550,6 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
+    console.log(chartData)
     
     if (title != "S&P 500"){
         var tickers = JSON.parse("{{ tickers|escapejs }}");

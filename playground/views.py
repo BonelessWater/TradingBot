@@ -176,8 +176,6 @@ def get_covariance():
 
         today = date.today()
         calculation_day = covariance_entry.calculation_date
-        print(today, calculation_day)
-        print(today == calculation_day)
 
         if today == calculation_day:
             try:
