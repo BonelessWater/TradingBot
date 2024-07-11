@@ -19,8 +19,6 @@ from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 

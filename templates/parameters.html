@@ -234,6 +234,7 @@ Parameters | Portfolio Builder
                 // Create the dataset with dynamic colors
                 data = chartData.x.map((x, i) => {
                     color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
+                    
                     return {
                         x: x,
                         y: chartData.y[i],
@@ -307,6 +308,7 @@ Parameters | Portfolio Builder
                     color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
                     pointBackgroundColors.push(color);
                 }
+
                 myChart.update();
 
                 // Create the color scale bar
