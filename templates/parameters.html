@@ -58,12 +58,12 @@ Parameters | Portfolio Builder
                 <canvas id="myChartSharpe"></canvas>
                 <div class="row">
                     <div class="col s2">
-                        <h6 id="sharpeRatioS" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
+                        <h6 id="sharpeRatioS" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset."></h6>
                     </div>
                 </div>
-                <div class="row">
+                <!--<div class="row">
                     <div id="colorScaleBarSharpe" class="color-scale-bar"></div>
-                </div>
+                </div>-->
             </div>
         </div>
         <div>
@@ -116,12 +116,12 @@ Parameters | Portfolio Builder
                 <canvas id="myChartReturn"></canvas>
                 <div class="row">
                     <div class="col s2">
-                        <h6 id="sharpeRatioR" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset.">Sharpe Ratio: </h6>
+                        <h6 id="sharpeRatioR" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset."></h6>
                     </div>
                 </div>
-                <div class="row">
+                <!--<div class="row">
                     <div id="colorScaleBarReturn" class="color-scale-bar"></div>
-                </div>
+                </div>-->
             </div>
         </div>
         <div>
@@ -224,28 +224,45 @@ Parameters | Portfolio Builder
             }
 
             function createChart(chartData, identifier, colorbar){
+                var ctx = document.getElementById(identifier).getContext('2d');
                 var pointBackgroundColors = [];
-                let ctx = document.getElementById(identifier).getContext('2d');
 
                 // Calculate min and max Sharpe ratios
-                minSharpe = Math.min(...chartData.sharpe);
-                maxSharpe = Math.max(...chartData.sharpe);
+                const minSharpe = Math.min(...chartData.sharpe);
+                const maxSharpe = Math.max(...chartData.sharpe);
 
-                // Create the dataset with dynamic colors
-                data = chartData.x.map((x, i) => {
-                    color = interpolateColor(chartData.sharpe[i], minSharpe, maxSharpe);
+                // Prepare labels for the legend
+                var minMaxLabels = {
+                    min: 'Min Sharpe: ' + minSharpe.toFixed(2),
+                    max: 'Max Sharpe: ' + maxSharpe.toFixed(2)
+                };
+
+                // Create the dataset with dynamic colors and radii
+                const data = chartData.x.map((x, i) => {
+                    const sharpe = chartData.sharpe[i];
+                    const color = interpolateColor(sharpe, minSharpe, maxSharpe);
+                    let pointRadius = 3; // Default radius
+
+                    // Enlarge points for min and max Sharpe
+                    if (sharpe === minSharpe || sharpe === maxSharpe) {
+                        pointRadius = 15;
+                    }
+                    
+                    // Add color to the background colors array
+                    pointBackgroundColors.push(color);
                     
                     return {
                         x: x,
                         y: chartData.y[i],
-                        backgroundColor: "#000000",
-                        borderColor: "#000000",
-                        pointRadius: 3,
-                        label: chartData.label[i]
+                        backgroundColor: color,
+                        borderColor: color,
+                        pointRadius: pointRadius,
+                        label: chartData.label[i],
+                        sharpeValue: sharpe.toFixed(2)
                     };
                 });
-
-                config = {
+                
+                const config = {
                     type: 'scatter',
                     data: {
                         datasets: [{
@@ -253,9 +270,8 @@ Parameters | Portfolio Builder
                             data: data,
                             pointBackgroundColor: pointBackgroundColors,
                             pointStyle: 'circle',
-                            pointRadius: 2.5,
                         }]
-                    }, 
+                    },
                     options: {
                         scales: {
                             x: {
@@ -273,7 +289,8 @@ Parameters | Portfolio Builder
                                     text: 'Return'
                                 }
                             }
-                        }, plugins: {
+                        },
+                        plugins: {
                             title: {
                                 display: true,
                                 text: 'Efficient Frontier',
@@ -282,8 +299,25 @@ Parameters | Portfolio Builder
                                 }
                             },
                             legend: {
-                                display: false,
-                            }, tooltip: {
+                                display: true,
+                                labels: {
+                                    generateLabels: function(chart) {
+                                        // Default point style
+                                        const defaultLabel = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                        // Custom labels
+                                        defaultLabel.push({
+                                            text: minMaxLabels.min,
+                                            fillStyle: interpolateColor(minSharpe, minSharpe, maxSharpe),
+                                        });
+                                        defaultLabel.push({
+                                            text: minMaxLabels.max,
+                                            fillStyle: interpolateColor(maxSharpe, minSharpe, maxSharpe),
+                                        });
+                                        return defaultLabel;
+                                    }
+                                }
+                            },
+                            tooltip: {
                                 enabled: true,
                                 callbacks: {
                                     label: function(tooltipItem) {
@@ -292,16 +326,16 @@ Parameters | Portfolio Builder
                                         let labelX = 'Risk: ' + point.x.toFixed(2);
                                         let labelY = 'Return: ' + point.y.toFixed(2);
                                         let labelInfo = 'Info: ' + point.label;
-                                        return [labelX, labelY, labelInfo];
+                                        let sharpeLabel = 'Sharpe Ratio: ' + point.sharpeValue;
+                                        return [labelX, labelY, labelInfo, sharpeLabel];
                                     }
                                 }
                             }
                         }
                     }
                 };
+
                 var myChart = new Chart(ctx, config);
-                minSharpe = Math.min(...chartData.sharpe);
-                maxSharpe = Math.max(...chartData.sharpe);
 
                 for (i = 0; i < myChart.data.datasets[0].data.length; i++) {
                     //color = interpolateColor(myChart.data.datasets[0].sharpe[i], minSharpe, maxSharpe);
@@ -311,25 +345,25 @@ Parameters | Portfolio Builder
 
                 myChart.update();
 
-                // Create the color scale bar
-                const colorScaleBar = document.getElementById(colorbar);
-                const numColors = 50; // Number of steps in the color scale
-                for (let i = 0; i <= numColors; i++) {
-                    const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
-                    const color = interpolateColor(value, minSharpe, maxSharpe);
-                    const div = document.createElement('div');
-                    div.style.backgroundColor = color;
-                    colorScaleBar.appendChild(div);
-                }
+                // // Create the color scale bar
+                // const colorScaleBar = document.getElementById(colorbar);
+                // const numColors = 50; // Number of steps in the color scale
+                // for (let i = 0; i <= numColors; i++) {
+                //     const value = minSharpe + (i / numColors) * (maxSharpe - minSharpe);
+                //     const color = interpolateColor(value, minSharpe, maxSharpe);
+                //     const div = document.createElement('div');
+                //     div.style.backgroundColor = color;
+                //     colorScaleBar.appendChild(div);
+                // }
 
-                // Add min and max Sharpe values
-                const minLabel = document.createElement('span');
-                minLabel.textContent = `Min: ${minSharpe.toFixed(2)}`;
-                colorScaleBar.appendChild(minLabel);
+                // // Add min and max Sharpe values
+                // const minLabel = document.createElement('span');
+                // minLabel.textContent = `Min: ${minSharpe.toFixed(2)}`;
+                // colorScaleBar.appendChild(minLabel);
 
-                const maxLabel = document.createElement('span');
-                maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
-                colorScaleBar.appendChild(maxLabel);
+                // const maxLabel = document.createElement('span');
+                // maxLabel.textContent = `Max: ${maxSharpe.toFixed(2)}`;
+                // colorScaleBar.appendChild(maxLabel);
             }
 
         var id_sharpe = 'myChartSharpe';
