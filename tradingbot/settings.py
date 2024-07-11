@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -52,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'playground.apps.PlaygroundConfig',
-    'debug_toolbar',
+    'debug_toolbar'
 ]
 
 MIDDLEWARE = [
@@ -64,8 +65,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware', 
+    'debug_toolbar.middleware.DebugToolbarMiddleware'
 ]
+
+# Conditionally add the debug toolbar (debugging is incompatible with tests)
+# if 'test' not in sys.argv:
+#     INSTALLED_APPS += ['debug_toolbar']
+#     MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
+# 
+# DEBUG_TOOLBAR_CONFIG = {
+#     'IS_RUNNING_TESTS': False,
+# }
 
 ROOT_URLCONF = 'tradingbot.urls'
 

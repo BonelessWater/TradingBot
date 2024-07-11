@@ -156,18 +156,35 @@ document.addEventListener('DOMContentLoaded', function() {
     .move-down{
         margin-top: 50px;
     }
+    .custom-button {
+        height: 300px;          
+        width: 35px;
+        border-radius: 25px;  
+        transform-origin: center; 
+        transform: translateY(100px);
+        display: flex;    
+        align-items: center;    
+        justify-content: center;
+        writing-mode: vertical-lr; 
+        text-orientation: upright;
+    }
 </style>
 <div class="container">
     <div class="col s12">
         <div class="row">
-            <div id="dateRangeDisplay" style="text-align:center; margin-top:10px; font-size:16px;"></div>
+            <div class="col s11">
+                <div id="dateRangeDisplay" style="text-align:center; margin-top:10px; font-size:16px;"></div>
 
-            <canvas id="myChart"></canvas>
+                <canvas id="myChart"></canvas>
 
-            <div id="barContainer" style="position: relative; width: 100%; height: 20px; background-color: #f1f1f1;">
-                <div id="rangeBar" style="height: 100%; background: #FF6384; position: absolute;"></div>
+                <div id="barContainer" style="position: relative; width: 100%; height: 20px; background-color: #f1f1f1;">
+                    <div id="rangeBar" style="height: 100%; background: #FF6384; position: absolute;"></div>
+                </div>
+                <h6 class="center" id="dataInfo"></h6>
             </div>
-            <h6 class="center" id="dataInfo"></h6>
+            <div>
+                <button id="simulate" class="waves-effect waves-light btn-large red lighten-1 custom-button" value="simulate">Simulate</button>
+            </div>
         </div>
     </div>
     {% if is_post %}
@@ -217,16 +234,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 <div class="row">
                     <div class="col s3 center">
-                        <button id="loadCashFlow" name="button" value="CASH_FLOW" class="waves-effect waves-light btn-large red lighten-1">Cash Flow</button>
+                        <button name="dataButton" value="CASH_FLOW" class="waves-effect waves-light btn-large red lighten-1">Cash Flow</button>
                     </div>
                     <div class="col s3 center">
-                        <button id="loadIncomeStatement" name="button" value="INCOME_STATEMENT" class="waves-effect waves-light btn-large red lighten-1">Income Statement</button>
+                        <button name="dataButton" value="INCOME_STATEMENT" class="waves-effect waves-light btn-large red lighten-1">Income Statement</button>
                     </div>
                     <div class="col s3 center">
-                        <button id="loadBalanceSheet" name="button" value="BALANCE_SHEET" class="waves-effect waves-light btn-large red lighten-1">Balance Sheet</button>
+                        <button name="dataButton" value="BALANCE_SHEET" class="waves-effect waves-light btn-large red lighten-1">Balance Sheet</button>
                     </div>
                     <div class="col s3 center">
-                        <button id="loadEarnings" name="button" value="EARNINGS" class="waves-effect waves-light btn-large red lighten-1">Earnings</button>
+                        <button name="dataButton" value="EARNINGS" class="waves-effect waves-light btn-large red lighten-1">Earnings</button>
                     </div>
                 </div>
 
@@ -244,16 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 
-    
     var financialChart;
     if (financialChart != null){
         var datactx = document.getElementById('financialChart').getContext('2d');
     }
     function createChart(data) {
         data_type = data.data_type;
-        console.log(data_type);
         if (financialChart) {
-            console.log('destroy');
             financialChart.destroy(); // Destroy existing chart instance if exists
             financialChart = null; // Clear the reference
         }
@@ -492,22 +506,78 @@ document.addEventListener('DOMContentLoaded', function() {
         financialChart.update();
     }
 
+    function simulateChart(data){
+        var canvas = document.getElementById('myChart');
+        var chartInstance = Chart.getChart(canvas);
+
+        endTime += 2592000000; // Extend endTime to accomodate new data
+        totalDuration += 2592000000; // Extend totalDuration to accomodate new data
+
+        const simulationColor = {
+            'Lowest Value': 'rgba(135, 206, 235, 1)', // Light Cyan
+            'Highest Value': 'rgba(192, 192, 192, 1)', // Silver
+            '90th Percentile': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink
+            '75th Percentile': 'rgba(144, 238, 144, 1)', // Light Green
+            '50th Percentile': 'rgba(173, 216, 230, 1)', // Light Blue
+            '25th Percentile': 'rgba(255, 182, 193, 1)' // Light Pink
+        };
+
+        data.datasets.forEach((dataset) => {
+            let datasetColor = simulationColor[dataset.label] || randomColor();
+
+            chartInstance.data.datasets.push({
+                label: dataset.label,
+                data: dataset.data,
+                borderColor: datasetColor,
+                backgroundColor: datasetColor, // Use the same color for background if needed
+                borderWidth: 1,
+                pointRadius: 0,
+                //hiddenInLegend: true // Custom property to indicate this should not show in legend
+            });
+        });
+
+        // Filter datasets to manage legend entries
+        //chartInstance.options.plugins.legend.labels.filter = function(legendItem, chartData) {
+        //    // If our custom property is set and true, don't show this dataset in the legend
+        //    if (chartData.datasets[legendItem.datasetIndex].hiddenInLegend) {
+        //        return false;
+        //    }
+        //    return true;
+        //};
+
+        chartInstance.update(); // This updates the chart with all the new datasets
+    }
+
+    function randomColor() {
+        return `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.5)`;
+    }
+
     $(document).ready(function() {
         $('button').click(function() {
+
+            var action = $(this).attr('value'); // Convert button Value to action
+
+            if (action != 'simulate'){
+                $('button').removeClass('green accent-3').addClass('red lighten-1');
+                $(this).removeClass('red lighten-1').addClass('green accent-3');
+
+            } else {
+                $(this).removeClass('red lighten-1').addClass('green accent-3');
+
+            }
+
             // Remove 'green' class from all buttons and add 'red lighten-1' to ensure they are all red
-            $('button').removeClass('green accent-3').addClass('red lighten-1');
-
-            // Add 'green' class to the clicked button and remove 'red lighten-1'
-            $(this).removeClass('red lighten-1').addClass('green accent-3');
-
-            var action = $(this).attr('id').replace('load', '').replace(/([A-Z])/g, '_$1').toUpperCase().trim('_'); // Convert button ID to action
             var ticker = '{{ title|escapejs }}';
             $.ajax({
                 url: '{% url "research" %}?action=' + action + '&ticker=' + ticker,
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
-                    createChart(response);
+                    if (action == 'simulate') {
+                        simulateChart(response);
+                    } else {
+                        createChart(response);
+                    }
                 },
                 error: function(xhr, status, error) {
                     console.error('Error:', error);
@@ -550,7 +620,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
-    console.log(chartData)
     
     if (title != "S&P 500"){
         var tickers = JSON.parse("{{ tickers|escapejs }}");
@@ -561,11 +630,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const rangeBar = document.getElementById('rangeBar');
     const barContainer = document.getElementById('barContainer');
     const dataInfo = document.getElementById('dataInfo'); // Element to show data info
-    const dates = chartData.date.map(date => new Date(date)); // Assuming chartData.date contains date strings
+    var dates = chartData.date.map(date => new Date(date)); // Assuming chartData.date contains date strings
     const startTime = dates[0].getTime(); // Start time of the chart data
-    const endTime = dates[dates.length - 1].getTime(); // End time of the chart data
-    const totalDuration = endTime - startTime; // Total duration in milliseconds
-    const totalDataPoints = dates.length; // Total number of data points
+    var endTime = dates[dates.length - 1].getTime(); // End time of the chart data
+    var totalDuration = endTime - startTime; // Total duration in milliseconds
 
     // Define a color mapping for each dataset
     const colorMapping = {
@@ -608,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        const config = {
+        var config = {
             type: 'line',
             data: { datasets: datasets },
             options: {

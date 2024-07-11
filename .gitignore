@@ -6,9 +6,12 @@ venv
 venv/*
 __pycache__
 
+# Temoporay files for data handling
 keys.py
 weights.txt
 debug.log
 test.py
 output.csv
 tickers_prices.csv
+
+.coverage

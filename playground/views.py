@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from .forms import ParametersForm, ResearchForm
 from .models import CovarianceData, SP500Ticker, FinancialData, IncomeStatement, BalanceSheet, CashFlow, Earnings
 import requests
@@ -12,12 +12,15 @@ import time as t
 import json
 import numpy as np
 import pandas as pd
+import decimal
+from tqdm import tqdm
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, timedelta, date
 from datetime import datetime, timedelta
-import decimal
+import matplotlib.pyplot as plt
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -176,7 +179,7 @@ def get_covariance():
 
         today = date.today()
         calculation_day = covariance_entry.calculation_date
-
+        print(today, calculation_day)
         if today == calculation_day:
             try:
                 S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
@@ -687,6 +690,53 @@ def data_output(ticker, data_type):
         surprise_percentage_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.surprise_percentage} for obj in queryset][::-1]
         return [function, ticker, json.dumps(reported_eps_data), json.dumps(estimated_eps_data), json.dumps(surprise_data), json.dumps(surprise_percentage_data)]
 
+def single_monte_carlo(ticker):
+    # Load ticker data; rename column; remove last row because it is sometimes NaN
+    df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
+    df.rename(columns={ticker: 'Close'}, inplace=True)
+    df = df[:-1]  # Remove the last row in case it's NaN
+
+    number_simulation = 100
+    predict_day = 30
+    returns = df.Close.pct_change()
+    volatility = returns.std()
+    results = pd.DataFrame()
+    last_date = df.Date.iloc[-1]
+
+    # Generate simulations
+    for i in tqdm(range(number_simulation)):
+        prices = [df.Close.iloc[-1]]  # Start with the last actual close price
+        for d in range(predict_day):
+            price_today = prices[d] * (1 + np.random.normal(0, volatility))
+            prices.append(price_today)
+        results[i] = prices
+
+    # Identify significant simulations based on final values
+    final_values = results.iloc[-1]  # Gets the last row (final values of each simulation)
+    sorted_indices = list(final_values.argsort())
+
+    indices_to_keep = {
+        'Lowest Value': sorted_indices[0],  # Lowest
+        'Highest Value': sorted_indices[-1],  # Highest
+        '90th Percentile': sorted_indices[int(len(sorted_indices) * 0.90)],  # 90th percentile
+        '75th Percentile': sorted_indices[int(len(sorted_indices) * 0.75)],  # 75th percentile
+        '50th Percentile': sorted_indices[int(len(sorted_indices) * 0.50)],  # 50th percentile
+        '25th Percentile': sorted_indices[int(len(sorted_indices) * 0.25)]   # 25th percentile
+    }
+
+    # Preparing data for JSON conversion
+    json_data = {'datasets': []}
+    
+    for label, index in indices_to_keep.items():
+        dataset = {
+            'label': label,
+            'data': [{'x': (last_date + timedelta(days=d)).strftime('%Y-%m-%d'), 'y': results[index].iloc[d]}
+                     for d in range(predict_day + 1)]  # ensure we include all days
+        }
+        json_data['datasets'].append(dataset)
+
+    return json_data
+
 def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
     tickers = json.dumps([item[0] for item in tickers_and_names])
@@ -695,24 +745,28 @@ def research(request):
     selected_ticker = request.GET.get('ticker', None)
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # This part runs only if an AJAX request is detected
-        data_type = request.GET.get('action')[1:]
+
         ticker = request.GET.get('ticker')
-        print(ticker)
-        data_values = data_output(ticker=ticker, data_type=data_type)
+        print(request.GET.get('action'))
+        if request.GET.get('action') == 'simulate':
+            data = single_monte_carlo(ticker)
+            return JsonResponse(data)
+        else:
+            data_type = request.GET.get('action')
+            data_values = data_output(ticker=ticker, data_type=data_type)
 
-        if data_type == 'INCOME_STATEMENT':
-            keys = ['data_type','ticker','net_income_data','total_revenue_data','cost_of_revenue_data','operating_income_data','gross_profit_data','operating_expenses_data','depreciation_data']
-        if data_type == 'BALANCE_SHEET':
-            keys = ['data_type','ticker','total_assets_data','total_current_assets_data','investment_data','current_debt_data','treasury_stock_data','common_stock_data']
-        elif data_type == 'CASH_FLOW':
-            keys = ['data_type','ticker','operating_cashflow_data','capital_expenditures_data','change_in_inventory_data','profit_loss_data','cashflow_from_investments_data','cashflow_from_financing_data','dividend_payout_data']
-        elif data_type == 'EARNINGS':
-            keys = ['data_type','ticker','reported_eps_data','estimated_eps_data','surprise_data','surprise_percentage_data']
+            if data_type == 'INCOME_STATEMENT':
+                keys = ['data_type','ticker','net_income_data','total_revenue_data','cost_of_revenue_data','operating_income_data','gross_profit_data','operating_expenses_data','depreciation_data']
+            if data_type == 'BALANCE_SHEET':
+                keys = ['data_type','ticker','total_assets_data','total_current_assets_data','investment_data','current_debt_data','treasury_stock_data','common_stock_data']
+            elif data_type == 'CASH_FLOW':
+                keys = ['data_type','ticker','operating_cashflow_data','capital_expenditures_data','change_in_inventory_data','profit_loss_data','cashflow_from_investments_data','cashflow_from_financing_data','dividend_payout_data']
+            elif data_type == 'EARNINGS':
+                keys = ['data_type','ticker','reported_eps_data','estimated_eps_data','surprise_data','surprise_percentage_data']
 
-        data_response = {k: v for k, v in zip(keys, data_values)}
+            data_response = {k: v for k, v in zip(keys, data_values)}
 
-        return JsonResponse(data_response)
+            return JsonResponse(data_response)
 
     # Handle form submissions
     if request.method == 'POST':
@@ -779,5 +833,11 @@ def research(request):
         'finance': finance
     })
 
+def pct_change(x,period=1):
+    x = np.array(x)
+    return ((x[period:] - x[:-period]) / x[:-period])
+
+
 def indicator(request):
     return render(request, 'indicator.html')
+
