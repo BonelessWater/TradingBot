@@ -157,22 +157,21 @@ document.addEventListener('DOMContentLoaded', function() {
         margin-top: 50px;
     }
     .custom-button {
-        height: 300px;          
-        width: 35px;
+        height: 35px;          
+        width: 100%;
         border-radius: 25px;  
         transform-origin: center; 
-        transform: translateY(100px);
+        transform: translateY(30%);
         display: flex;    
         align-items: center;    
         justify-content: center;
-        writing-mode: vertical-lr; 
-        text-orientation: upright;
+        
     }
 </style>
 <div class="container">
     <div class="col s12">
         <div class="row">
-            <div class="col s11">
+            <div>
                 <div id="dateRangeDisplay" style="text-align:center; margin-top:10px; font-size:16px;"></div>
 
                 <canvas id="myChart"></canvas>
@@ -183,7 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <h6 class="center" id="dataInfo"></h6>
             </div>
             <div>
-                <button id="simulate" class="waves-effect waves-light btn-large red lighten-1 custom-button" value="simulate">Simulate</button>
+                <button id="simulate" class="waves-effect waves-light btn-large red lighten-1 custom-button" value="simulate">Simulate Future</button>
             </div>
         </div>
     </div>
@@ -558,11 +557,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var action = $(this).attr('value'); // Convert button Value to action
 
             if (action != 'simulate'){
-                $('button').removeClass('green accent-3').addClass('red lighten-1');
-                $(this).removeClass('red lighten-1').addClass('green accent-3');
+                $('button').removeClass('teal accent-3').addClass('red lighten-1');
+                $(this).removeClass('red lighten-1').addClass('teal accent-3');
 
             } else {
-                $(this).removeClass('red lighten-1').addClass('green accent-3');
+                $(this).removeClass('red lighten-1').addClass('teal accent-3');
 
             }
 
@@ -632,9 +631,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const dataInfo = document.getElementById('dataInfo'); // Element to show data info
     var dates = chartData.date.map(date => new Date(date)); // Assuming chartData.date contains date strings
     const startTime = dates[0].getTime(); // Start time of the chart data
+    
     var endTime = dates[dates.length - 1].getTime(); // End time of the chart data
     var totalDuration = endTime - startTime; // Total duration in milliseconds
-
+    console.log(startTime, endTime, totalDuration)
     // Define a color mapping for each dataset
     const colorMapping = {
             'Close Price': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink

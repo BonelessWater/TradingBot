@@ -12,13 +12,15 @@ import time as t
 import json
 import numpy as np
 import pandas as pd
+from collections import OrderedDict
+import ast
 import decimal
 from tqdm import tqdm
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date
-from datetime import datetime, timedelta
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -382,15 +384,169 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     for symbol in weights_return:
         valuation_return, finance_return, financial_data_return[symbol] = get_financial_data(symbol, investment_amount, weights_return[symbol])
 
-    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data_sharpe': financial_data_sharpe, 'tickers': json.dumps(tickers_sharpe)}
-    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data_return': financial_data_return, 'tickers': json.dumps(tickers_return)}
+    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data': financial_data_sharpe, 'tickers': json.dumps(tickers_sharpe), 'weights': str(dict(weights_sharpe))}
+    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data': financial_data_return, 'tickers': json.dumps(tickers_return), 'weights': str(dict(weights_return))}
 
     sharpe_data = json.dumps(data_dict_sharpe)
     return_data = json.dumps(data_dict_return)
     
     return error, message, sharpe_data, sharpe_dict, return_data, return_dict
 
+def monte_carlo(ticker_or_weights):
+    historical_data = None
+    
+    if isinstance(ticker_or_weights, dict):
+        # Create an empty DataFrame to store weighted prices
+        df = pd.DataFrame()
+        for ticker, weight in ticker_or_weights.items():
+            # Load ticker data; rename column; remove last row because it is sometimes NaN
+            temp_df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
+            temp_df.rename(columns={ticker: 'Close'}, inplace=True)
+            temp_df = temp_df[:-1]  # Remove the last row in case it's NaN
+            
+            # Handle NaN values in the temporary DataFrame
+            temp_df['Close'].fillna(method='ffill', inplace=True)
+            temp_df['Close'].fillna(method='bfill', inplace=True)
+            
+            if df.empty:
+                df['Date'] = temp_df['Date']
+                df['Weighted Close'] = temp_df['Close'] * weight
+            else:
+                df = pd.merge(df, temp_df[['Date', 'Close']], on='Date', suffixes=('', f'_{ticker}'))
+                df['Weighted Close'] += temp_df['Close'] * weight
+
+        # Handle NaN values by forward filling and then backward filling to handle any edge cases
+        df['Weighted Close'].fillna(method='ffill', inplace=True)
+        df['Weighted Close'].fillna(method='bfill', inplace=True)
+
+        # Extract all historical data excluding the last day
+        historical_data = df.iloc[:-1]
+    else:
+        # Load ticker data; rename column; remove last row because it is sometimes NaN
+        df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker_or_weights], parse_dates=['Date'])
+        df.rename(columns={ticker_or_weights: 'Close'}, inplace=True)
+        df = df[:-1]  # Remove the last row in case it's NaN
+
+    if df.empty:
+        raise ValueError("The DataFrame is empty. Please check the input data.")
+
+    number_simulation = 100
+    predict_day = 30
+    returns = df['Weighted Close'].pct_change() if 'Weighted Close' in df.columns else df['Close'].pct_change()
+    volatility = returns.std()
+    results = pd.DataFrame()
+    last_date = df['Date'].iloc[-1]
+
+    # Generate simulations
+    for i in tqdm(range(number_simulation)):
+        prices = [df['Weighted Close'].iloc[-1]] if 'Weighted Close' in df.columns else [df['Close'].iloc[-1]]
+        for d in range(predict_day):
+            price_today = prices[d] * (1 + np.random.normal(0, volatility))
+            prices.append(price_today)
+        results[i] = prices
+
+    # Identify significant simulations based on final values
+    final_values = results.iloc[-1]  # Gets the last row (final values of each simulation)
+    sorted_indices = list(final_values.argsort())
+
+    indices_to_keep = OrderedDict({
+        'Lowest Value': sorted_indices[0],  # Lowest
+        'Highest Value': sorted_indices[-1],  # Highest
+        '90th Percentile': sorted_indices[int(len(sorted_indices) * 0.90)],  # 90th percentile
+        '75th Percentile': sorted_indices[int(len(sorted_indices) * 0.75)],  # 75th percentile
+        '50th Percentile': sorted_indices[int(len(sorted_indices) * 0.50)],  # 50th percentile
+        '25th Percentile': sorted_indices[int(len(sorted_indices) * 0.25)]   # 25th percentile
+    })
+
+    # Convert OrderedDict to dict
+    indices_to_keep = dict(indices_to_keep)
+
+    # Preparing data for JSON conversion
+    json_data = {'datasets': []}
+    
+    for label, index in indices_to_keep.items():
+        dataset = {
+            'label': label,
+            'data': [{'x': (last_date + timedelta(days=d)).strftime('%Y-%m-%d'), 'y': results[index].iloc[d]}
+                     for d in range(predict_day + 1)]  # ensure we include all days
+        }
+        json_data['datasets'].append(dataset)
+    
+    # Add historical data to JSON if applicable
+    if historical_data is not None:
+        historical_dataset = {
+            'label': 'Weighted Portfolio',
+            'data': [{'x': row['Date'].strftime('%Y-%m-%d'), 'y': row['Weighted Close']} for _, row in historical_data.iterrows()]
+        }
+        json_data['datasets'].append(historical_dataset)
+
+    return json_data
+
+def multiple_monte_carlo(weights):
+    tickers = list(weights.keys())
+    weights = list(weights.values())
+
+    number_simulation = 100
+    predict_day = 30
+    all_simulations = []
+
+    # Load and prepare data for each ticker
+    for ticker in tickers:
+        df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
+        df.rename(columns={ticker: 'Close'}, inplace=True)
+        df = df[:-1]  # Remove the last row in case it's NaN
+
+        returns = df.Close.pct_change()
+        volatility = returns.std()
+        last_date = df.Date.iloc[-1]
+
+        # Generate simulations for this ticker
+        ticker_simulations = pd.DataFrame()
+        for i in tqdm(range(number_simulation), desc=f"Simulating {ticker}"):
+            prices = [df.Close.iloc[-1]]  # Start with the last actual close price
+            for d in range(predict_day):
+                price_today = prices[d] * (1 + np.random.normal(0, volatility))
+                prices.append(price_today)
+            ticker_simulations[i] = prices
+
+        all_simulations.append((ticker_simulations, weights[tickers.index(ticker)], last_date))
+
+    # Aggregate the simulations according to the weights
+    aggregated_simulations = sum(weight * simulations for simulations, weight, _ in all_simulations)
+
+    # Identify significant simulations based on final values
+    final_values = aggregated_simulations.iloc[-1]  # Gets the last row (final values of each simulation)
+    sorted_indices = list(final_values.argsort())
+
+    indices_to_keep = {
+        'Lowest Value': sorted_indices[0],  # Lowest
+        'Highest Value': sorted_indices[-1],  # Highest
+        '90th Percentile': sorted_indices[int(len(sorted_indices) * 0.90)],  # 90th percentile
+        '75th Percentile': sorted_indices[int(len(sorted_indices) * 0.75)],  # 75th percentile
+        '50th Percentile': sorted_indices[int(len(sorted_indices) * 0.50)],  # 50th percentile
+        '25th Percentile': sorted_indices[int(len(sorted_indices) * 0.25)]   # 25th percentile
+    }
+
+    # Preparing data for JSON conversion
+    json_data = {'datasets': []}
+    
+    for label, index in indices_to_keep.items():
+        dataset = {
+            'label': label,
+            'data': [{'x': (all_simulations[0][2] + timedelta(days=d)).strftime('%Y-%m-%d'), 'y': aggregated_simulations[index].iloc[d]}
+                     for d in range(predict_day + 1)]  # ensure we include all days
+        }
+        json_data['datasets'].append(dataset)
+
+    return json_data
+
 def parameters(request):   
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        weights = ast.literal_eval(request.GET.get('weights'))
+        
+        data = monte_carlo(weights)
+        return JsonResponse(data)
+    
     if request.method == 'POST':
 
         parameters = ParametersForm(request.POST)
@@ -688,53 +844,6 @@ def data_output(ticker, data_type):
         surprise_percentage_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.surprise_percentage} for obj in queryset][::-1]
         return [function, ticker, json.dumps(reported_eps_data), json.dumps(estimated_eps_data), json.dumps(surprise_data), json.dumps(surprise_percentage_data)]
 
-def single_monte_carlo(ticker):
-    # Load ticker data; rename column; remove last row because it is sometimes NaN
-    df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
-    df.rename(columns={ticker: 'Close'}, inplace=True)
-    df = df[:-1]  # Remove the last row in case it's NaN
-
-    number_simulation = 100
-    predict_day = 30
-    returns = df.Close.pct_change()
-    volatility = returns.std()
-    results = pd.DataFrame()
-    last_date = df.Date.iloc[-1]
-
-    # Generate simulations
-    for i in tqdm(range(number_simulation)):
-        prices = [df.Close.iloc[-1]]  # Start with the last actual close price
-        for d in range(predict_day):
-            price_today = prices[d] * (1 + np.random.normal(0, volatility))
-            prices.append(price_today)
-        results[i] = prices
-
-    # Identify significant simulations based on final values
-    final_values = results.iloc[-1]  # Gets the last row (final values of each simulation)
-    sorted_indices = list(final_values.argsort())
-
-    indices_to_keep = {
-        'Lowest Value': sorted_indices[0],  # Lowest
-        'Highest Value': sorted_indices[-1],  # Highest
-        '90th Percentile': sorted_indices[int(len(sorted_indices) * 0.90)],  # 90th percentile
-        '75th Percentile': sorted_indices[int(len(sorted_indices) * 0.75)],  # 75th percentile
-        '50th Percentile': sorted_indices[int(len(sorted_indices) * 0.50)],  # 50th percentile
-        '25th Percentile': sorted_indices[int(len(sorted_indices) * 0.25)]   # 25th percentile
-    }
-
-    # Preparing data for JSON conversion
-    json_data = {'datasets': []}
-    
-    for label, index in indices_to_keep.items():
-        dataset = {
-            'label': label,
-            'data': [{'x': (last_date + timedelta(days=d)).strftime('%Y-%m-%d'), 'y': results[index].iloc[d]}
-                     for d in range(predict_day + 1)]  # ensure we include all days
-        }
-        json_data['datasets'].append(dataset)
-
-    return json_data
-
 def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
     tickers = json.dumps([item[0] for item in tickers_and_names])
@@ -747,7 +856,7 @@ def research(request):
         ticker = request.GET.get('ticker')
         print(request.GET.get('action'))
         if request.GET.get('action') == 'simulate':
-            data = single_monte_carlo(ticker)
+            data = monte_carlo(ticker)
             return JsonResponse(data)
         else:
             data_type = request.GET.get('action')
@@ -834,7 +943,6 @@ def research(request):
 def pct_change(x,period=1):
     x = np.array(x)
     return ((x[period:] - x[:-period]) / x[:-period])
-
 
 def indicator(request):
     return render(request, 'indicator.html')
