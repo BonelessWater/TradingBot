@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .forms import ParametersForm, ResearchForm
 from .models import CovarianceData, SP500Ticker, FinancialData, IncomeStatement, BalanceSheet, CashFlow, Earnings
 import requests
@@ -21,6 +21,15 @@ from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
 from datetime import datetime, timedelta, date
 
+def robots_txt(request):
+    lines = [
+        "User-agent: *",
+        "Disallow: /private/",
+        "Disallow: /tmp/",
+        "Disallow: /admin/",
+        "Sitemap: https://stockportfoliobuilder.azurewebsites.net/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
