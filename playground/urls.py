@@ -13,5 +13,5 @@ urlpatterns = [
     path('parameters', parameters, name='parameters'),    
     path('research', research, name='research'),
     path('indicator', indicator, name='indicator'),
-    
+   # 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
