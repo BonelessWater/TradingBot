@@ -187,14 +187,18 @@ def get_covariance():
         covariance_entry = CovarianceData.objects.filter(tickers=tickers_str).order_by('-calculation_date').first()
 
         today = date.today()
-        calculation_day = covariance_entry.calculation_date
-        print(today, calculation_day)
-        if today == calculation_day:
-            try:
-                S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
-                return S2
-            except AttributeError:
-                logger.error("Error deserializing covariance matrix from the database.")
+
+        try:
+            calculation_day = covariance_entry.calculation_date
+            print(today, calculation_day)
+            if today == calculation_day:
+                try:
+                    S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
+                    return S2
+                except AttributeError:
+                    logger.error("Error deserializing covariance matrix from the database.")
+        except:
+            pass
 
         # If not during the restricted time and no entry was found or deserialization failed
         csv_file_path = 'tickers_prices.csv'
@@ -222,6 +226,7 @@ def get_covariance():
 
         # Calculate covariance matrix
         try:
+            logger.info('Calculated covariance matrix!!!')
             S2 = exp_cov(tickers_price_df, frequency=252, span=60, log_returns=True)  # Adjust frequency and span as needed
             S2 = (S2 + S2.T) / 2  # Ensure symmetry
             if S2.empty:
