@@ -39,6 +39,7 @@ ALPHA_KEY = os.getenv('ALPHA_KEY')
 logger = logging.getLogger(__name__)
 
 def main(request):
+    CovarianceData.flush()
     return render(request, 'main.html')
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
@@ -204,6 +205,8 @@ def get_covariance():
         csv_file_path = 'tickers_prices.csv'
         try:
             tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+            first_ten_tickers = tickers_price_df.columns[:10]
+            tickers_price_df = tickers_price_df[first_ten_tickers]
             logger.info(f"CSV file loaded successfully from {csv_file_path}")
         except FileNotFoundError:
             logger.error(f"CSV file not found at path: {csv_file_path}")
@@ -299,6 +302,7 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     horizon = np.sqrt(horizon)
 
     tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
+    tickers = sorted(tickers)[:10]
 
     csv_file_path = 'tickers_prices.csv'
 
