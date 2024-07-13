@@ -42,6 +42,27 @@ def main(request):
     CovarianceData.flush()
     return render(request, 'main.html')
 
+def order_tickers_by_returns(amount_of_tickers):
+    # Read the CSV file
+    tickers_price_df = pd.read_csv('tickers_prices.csv', index_col='Date', parse_dates=['Date'])
+    
+    # Ensure the DataFrame is sorted by date
+    tickers_price_df.sort_index(inplace=True)
+    
+    # Calculate the returns for each ticker
+    returns = tickers_price_df.pct_change().iloc[1:].sum()
+    
+    # Sort tickers based on the returns
+    sorted_returns = returns.sort_values(ascending=False)
+    
+    # Get the top 'amount_of_tickers' tickers
+    top_returns = sorted_returns.head(amount_of_tickers)
+    
+    # Filter the original DataFrame to only include the top tickers
+    tickers_price_df = tickers_price_df[top_returns.index]
+    
+    return tickers_price_df
+
 def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
     """Gets the financial data relavent to a specified stock ticker
 
@@ -161,7 +182,7 @@ def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
 
-def get_covariance():
+def get_covariance(amount_of_tickers):
     """Gets or calculates the covarainces matrix of the sp500's closing prices. if already calculated, it is fetched from a database
 
     Returns
@@ -204,9 +225,7 @@ def get_covariance():
         # If not during the restricted time and no entry was found or deserialization failed
         csv_file_path = 'tickers_prices.csv'
         try:
-            tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
-            first_ten_tickers = tickers_price_df.columns[:10]
-            tickers_price_df = tickers_price_df[first_ten_tickers]
+            tickers_price_df = order_tickers_by_returns(amount_of_tickers)
             logger.info(f"CSV file loaded successfully from {csv_file_path}")
         except FileNotFoundError:
             logger.error(f"CSV file not found at path: {csv_file_path}")
@@ -301,18 +320,16 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     
     horizon = np.sqrt(horizon)
 
-    tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
-    tickers = sorted(tickers)[:10]
+    amount_of_tickers = 50
 
-    csv_file_path = 'tickers_prices.csv'
+    tickers_price_df = order_tickers_by_returns(amount_of_tickers)
 
-    # Read the DataFrame back from the CSV file
-    tickers_price_df = pd.read_csv(csv_file_path, index_col='Date', parse_dates=['Date'])
+    tickers = tickers_price_df.columns.tolist() # Gives list of top tickers by returns
 
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
     start = t.time()
-    S2 = get_covariance()
+    S2 = get_covariance(amount_of_tickers)
     end = t.time()    
     print(end-start)
 
