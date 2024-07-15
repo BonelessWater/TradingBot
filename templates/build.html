@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 {% block title %}
-Parameters | Portfolio Builder
+Parameters - Portfolio Builder
 {% endblock title %}
 
 {% block sidebar %}
@@ -371,7 +371,7 @@ Parameters | Portfolio Builder
                     $(this).removeClass('not-calculated').addClass('calculated');
 
                     $.ajax({
-                        url: '{% url "parameters" %}?weights=' + chart_weights,
+                        url: '{% url "build" %}?weights=' + chart_weights,
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
@@ -405,7 +405,7 @@ Parameters | Portfolio Builder
                     $('#loading-' + chart_id).show();
                     
                     $.ajax({
-                        url: '{% url "parameters" %}?tickers=' + tickers,
+                        url: '{% url "build" %}?tickers=' + tickers,
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {

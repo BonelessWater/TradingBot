@@ -13,7 +13,8 @@ urlpatterns = [
     path('', main, name='main'),
 
     # Redirects
-    path('parameters', parameters, name='parameters'),    
+    path('build', build, name='build'),    
+    path('trade', trade, name='trade'),    
     path('research', research, name='research'),
     path('indicator', indicator, name='indicator'),
     

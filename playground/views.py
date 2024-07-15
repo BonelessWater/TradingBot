@@ -529,7 +529,7 @@ def sentiment(tickers):
 
     return sentiment_companies.to_json(orient='records')
     
-def parameters(request):   
+def build(request):   
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         if request.GET.get('weights') is not None:
             weights = ast.literal_eval(request.GET.get('weights'))
@@ -553,11 +553,11 @@ def parameters(request):
 
             error, error_message, sharpe_data, sharpe_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_var)
             if error == True:
-                return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
-            return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'return_data': return_data, 'return_dict': return_dict})
+                return render(request, 'build.html', {'is_post': False, 'error': True, 'message': error_message})
+            return render(request, 'build.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'return_data': return_data, 'return_dict': return_dict})
     
     error_message = ''
-    return render(request, 'parameters.html', {'is_post': False, 'error': False, 'message': error_message})
+    return render(request, 'build.html', {'is_post': False, 'error': False, 'message': error_message})
 
 def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator):
     df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
@@ -839,6 +839,10 @@ def data_output(ticker, data_type):
         surprise_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.Surprise} for obj in queryset][::-1]
         surprise_percentage_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.surprise_percentage} for obj in queryset][::-1]
         return [function, ticker, json.dumps(reported_eps_data), json.dumps(estimated_eps_data), json.dumps(surprise_data), json.dumps(surprise_percentage_data)]
+
+def trade(request):
+    return render(request, 'trade.html')
+
 
 def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
