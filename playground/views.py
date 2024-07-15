@@ -5,21 +5,27 @@ from .models import CovarianceData, SP500Ticker, FinancialData, IncomeStatement,
 import requests
 from pathlib import Path
 import os
-from dotenv import load_dotenv
-import logging
-import yfinance as yf
+from dotenv import load_dotenv # Retrieving api key
+import logging # Logger for debugging
+import yfinance as yf # Retrieving stock data
 import time as t
+from datetime import datetime, timedelta, date
 import json
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-import ast
+import ast # For non-post requests
 import decimal
-from tqdm import tqdm
+from tqdm import tqdm # Monte Carlo simulation
+
+# Efficient frontier
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.expected_returns import ema_historical_return
 from pypfopt.risk_models import exp_cov
-from datetime import datetime, timedelta, date
+
+# Sentiment analysis
+from sentiment import finsent
+import nltk
 
 def robots_txt(request):
     lines = [
@@ -39,7 +45,6 @@ ALPHA_KEY = os.getenv('ALPHA_KEY')
 logger = logging.getLogger(__name__)
 
 def main(request):
-    CovarianceData.flush()
     return render(request, 'main.html')
 
 def order_tickers_by_returns(amount_of_tickers):
@@ -517,73 +522,28 @@ def monte_carlo(ticker_or_weights):
 
     return json_data
 
-def multiple_monte_carlo(weights):
-    tickers = list(weights.keys())
-    weights = list(weights.values())
+def sentiment(tickers):
+    nltk.download('vader_lexicon')
 
-    number_simulation = 100
-    predict_day = 30
-    all_simulations = []
+    sentiment_companies = finsent.get_all_stocks(tickers)
 
-    # Load and prepare data for each ticker
-    for ticker in tickers:
-        df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
-        df.rename(columns={ticker: 'Close'}, inplace=True)
-        df = df[:-1]  # Remove the last row in case it's NaN
-
-        returns = df.Close.pct_change()
-        volatility = returns.std()
-        last_date = df.Date.iloc[-1]
-
-        # Generate simulations for this ticker
-        ticker_simulations = pd.DataFrame()
-        for i in tqdm(range(number_simulation), desc=f"Simulating {ticker}"):
-            prices = [df.Close.iloc[-1]]  # Start with the last actual close price
-            for d in range(predict_day):
-                price_today = prices[d] * (1 + np.random.normal(0, volatility))
-                prices.append(price_today)
-            ticker_simulations[i] = prices
-
-        all_simulations.append((ticker_simulations, weights[tickers.index(ticker)], last_date))
-
-    # Aggregate the simulations according to the weights
-    aggregated_simulations = sum(weight * simulations for simulations, weight, _ in all_simulations)
-
-    # Identify significant simulations based on final values
-    final_values = aggregated_simulations.iloc[-1]  # Gets the last row (final values of each simulation)
-    sorted_indices = list(final_values.argsort())
-
-    indices_to_keep = {
-        'Lowest Value': sorted_indices[0],  # Lowest
-        'Highest Value': sorted_indices[-1],  # Highest
-        '90th Percentile': sorted_indices[int(len(sorted_indices) * 0.90)],  # 90th percentile
-        '75th Percentile': sorted_indices[int(len(sorted_indices) * 0.75)],  # 75th percentile
-        '50th Percentile': sorted_indices[int(len(sorted_indices) * 0.50)],  # 50th percentile
-        '25th Percentile': sorted_indices[int(len(sorted_indices) * 0.25)]   # 25th percentile
-    }
-
-    # Preparing data for JSON conversion
-    json_data = {'datasets': []}
+    return sentiment_companies.to_json(orient='records')
     
-    for label, index in indices_to_keep.items():
-        dataset = {
-            'label': label,
-            'data': [{'x': (all_simulations[0][2] + timedelta(days=d)).strftime('%Y-%m-%d'), 'y': aggregated_simulations[index].iloc[d]}
-                     for d in range(predict_day + 1)]  # ensure we include all days
-        }
-        json_data['datasets'].append(dataset)
-
-    return json_data
-
 def parameters(request):   
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        weights = ast.literal_eval(request.GET.get('weights'))
+        if request.GET.get('weights') is not None:
+            weights = ast.literal_eval(request.GET.get('weights'))
+            data = monte_carlo(weights)
+            return JsonResponse(data)
         
-        data = monte_carlo(weights)
-        return JsonResponse(data)
-    
+        elif request.GET.get('tickers') is not None:
+            tickers = ast.literal_eval(request.GET.get('tickers'))
+            sentiment_companies = sentiment(tickers)
+            print(sentiment_companies)
+            print(JsonResponse(sentiment_companies, safe=False))
+            return JsonResponse(sentiment_companies, safe=False)
+        
     if request.method == 'POST':
-
         parameters = ParametersForm(request.POST)
         if parameters.is_valid():
             investment_amount = parameters.cleaned_data['amount']
@@ -595,6 +555,7 @@ def parameters(request):
             if error == True:
                 return render(request, 'parameters.html', {'is_post': False, 'error': True, 'message': error_message})
             return render(request, 'parameters.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'return_data': return_data, 'return_dict': return_dict})
+    
     error_message = ''
     return render(request, 'parameters.html', {'is_post': False, 'error': False, 'message': error_message})
 

@@ -28,3 +28,5 @@ newsapi-python==0.2.7
 newspaper3k==0.2.8
 apscheduler==3.10.4
 tqdm==4.66.4
+selenium==4.22.0
+webdriver_manager==4.0.1

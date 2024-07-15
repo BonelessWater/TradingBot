@@ -63,6 +63,14 @@ Parameters | Portfolio Builder
         .chart-space {
             margin-top: 4em;
         }
+        #chart-container .preloader-wrapper {
+            position: absolute; /* Position relative to the nearest positioned ancestor (in this case, #chart-container) */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* This centers the div */
+            z-index: 100; /* Ensure it's above other content */
+        }
+
     </style>
     <div class="container">
         <!--Sharpe-->
@@ -70,9 +78,30 @@ Parameters | Portfolio Builder
             <div class="row">
             <canvas id="myChartSharpe"></canvas>
                 <div>
-                    <button id="{{ sharpe_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button not-calculated" value="sharpeChart">Simulate Future</button>
+                    <button id="{{ sharpe_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button portfolio not-calculated" value="sharpeChart">Simulate Future</button>
                 </div>
                 <canvas class="chart-space" id="sharpeChart" name="Portfolio Simulation" style="display: none;"></canvas>
+
+                <div>
+                    <button id="{{ sharpe_dict.tickers }}" class="waves-effect waves-light btn-large red lighten-1 custom-button news not-calculated" value="sentimentSharpeChart">Collect News Sentiments</button>
+                </div>
+                <div id="chart-container" style="position: relative; width: 100%; height: 400px; display: none;">
+                    <div class="preloader-wrapper active" id="loading-sentimentSharpeChart">
+                        <div class="spinner-layer spinner-blue-only">
+                            <div class="circle-clipper left">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="gap-patch">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="circle-clipper right">
+                                <div class="circle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <canvas class="chart-space" id="sentimentSharpeChart" name="News Sentiments" style="display: none;"></canvas>
+
                 <div class="row">
                     <div class="col s2">
                         <h6 id="sharpeRatioS" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset."></h6>
@@ -132,9 +161,29 @@ Parameters | Portfolio Builder
             <div class="row">
                 <canvas id="myChartReturn"></canvas>
                 <div>
-                    <button id="{{ return_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button not-calculated" value="returnChart">Simulate Future</button>
+                    <button id="{{ return_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button portfolio not-calculated" value="returnChart">Simulate Future</button>
+                </div>
+
+                <div>
+                    <button id="{{ return_dict.tickers }}" class="waves-effect waves-light btn-large red lighten-1 custom-button news not-calculated" value="sentimentReturnChart">Collect News Sentiments</button>
                 </div>
                 <canvas class="chart-space" id="returnChart" name="Portfolio Simulation" style="display: none;"></canvas>
+                <div id="chart-container" style="position: relative; width: 100%; height: 400px; display: none;">
+                    <div class="preloader-wrapper active" id="loading-sentimentReturnChart">
+                        <div class="spinner-layer spinner-blue-only">
+                            <div class="circle-clipper left">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="gap-patch">
+                                <div class="circle"></div>
+                            </div>
+                            <div class="circle-clipper right">
+                                <div class="circle"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <canvas class="chart-space" id="sentimentReturnChart" name="News Sentiments" style="display: none;"></canvas>
                 <div class="row">
                     <div class="col s2">
                         <h6 id="sharpeRatioR" data-position="top" data-tooltip="The Sharpe Ratio is a measure used to understand the return of an investment compared to its risk. It helps investors determine how much extra return they're getting for the additional volatility they endure by holding a riskier asset."></h6>
@@ -192,9 +241,7 @@ Parameters | Portfolio Builder
     
     <script>
 
-
-
-        function createChart(data, id) {
+        function createPortfolioChart(data, id) {
             console.log(data)
             document.getElementById(id).style.display = 'block';
 
@@ -258,11 +305,81 @@ Parameters | Portfolio Builder
             });
         }
 
-        $(document).ready(function() {
-            $('button').click(function() {
+        function createNewsChart(data, id){
+            data = JSON.parse(data);
+            const labels = data.map(item => item.Ticker);
+            const negData = data.map(item => item.neg);
+            const neuData = data.map(item => item.neu);
+            const posData = data.map(item => item.pos); 
+            const compData = data.map(item => item.compound);
+            const ctx = document.getElementById(id).getContext('2d');
 
+            const sentimentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Negative Sentiment',
+                            data: negData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Neutral Sentiment',
+                            data: neuData,
+                            backgroundColor: 'rgba(211, 211, 0, 0.2)',
+                            borderColor: 'rgba(211, 211, 0, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Positive Sentiment',
+                            data: posData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'General Sentiment',
+                            data: compData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            $('button.portfolio').click(function() {
                 var action = $(this).attr('value'); // Convert button Value to action
                 var chart_weights = $(this).attr('id');
+
+                if ($(this).hasClass('not-calculated')) {
+                    $(this).removeClass('not-calculated').addClass('calculated');
+
+                    $.ajax({
+                        url: '{% url "parameters" %}?weights=' + chart_weights,
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(response) {
+                            createPortfolioChart(response, action);
+                            
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error:', error);
+                        }
+                    });
+                }
 
                 if ($(this).hasClass('red lighten-1')) {
                     $(this).removeClass('red lighten-1').addClass('teal accent-3');
@@ -273,25 +390,41 @@ Parameters | Portfolio Builder
                     $(this).text('Simulate Future');
                     document.getElementById(action).style.display = 'none';
                 } 
+            });
+            $('button.news').click(function() {
+                var tickers = $(this).attr('id');
+                var chart_id = $(this).attr('value');
 
                 if ($(this).hasClass('not-calculated')) {
-                    console.log($(this).hasClass('not-calculated'))
                     $(this).removeClass('not-calculated').addClass('calculated');
 
+                    // Show loading element
+                    $('#loading-' + chart_id).show();
+                    
                     $.ajax({
-                        url: '{% url "parameters" %}?weights=' + chart_weights,
+                        url: '{% url "parameters" %}?tickers=' + tickers,
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
-                            createChart(response, action);
-                            
+                            createNewsChart(response, chart_id);
+                            $('#loading-' + chart_id).hide();
                         },
                         error: function(xhr, status, error) {
                             console.error('Error:', error);
+                            $('#loading-' + chart_id).hide();
                         }
                     });
                 }
-                
+
+                if ($(this).hasClass('red lighten-1')) {
+                    $(this).removeClass('red lighten-1').addClass('teal accent-3');
+                    $(this).text('Hide News Sentiments');
+                    $('#' + chart_id).show();
+                } else {
+                    $(this).removeClass('teal accent-3').addClass('red lighten-1');
+                    $(this).text('Collect News Sentiments');
+                    $('#' + chart_id).hide();
+                } 
             });
         });
         var chartType = '{{ chart_type|escapejs }}';
@@ -303,19 +436,6 @@ Parameters | Portfolio Builder
 
             const h6ElementS = document.getElementById('sharpeRatioS');
             const h6ElementR = document.getElementById('sharpeRatioR');
-            const colorScaleBarSharpe = document.getElementById('colorScaleBarSharpe');
-            const colorScaleBarReturn = document.getElementById('colorScaleBarReturn');
-
-            // Simulate color scale bar loading
-            setTimeout(() => {
-                // Assume the color scale bar has been loaded
-                colorScaleBarSharpe.classList.add('loaded'); // Add a class to indicate it's loaded
-                colorScaleBarReturn.classList.add('loaded'); // Add a class to indicate it's loaded
-
-                // Now show the h6 element
-                h6ElementS.style.display = 'inline-block';
-                h6ElementR.style.display = 'inline-block';
-            }, 2000); // Simulate a 2-second load time for the color scale bar
 
             // you could probably do this better ngl
             h6ElementS.addEventListener('mouseover', function () {
