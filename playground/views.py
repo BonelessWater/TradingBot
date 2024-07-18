@@ -45,6 +45,8 @@ ALPHA_KEY = os.getenv('ALPHA_KEY')
 logger = logging.getLogger(__name__)
 
 def main(request):
+    select_low_correlation_stocks(0)
+    CovarianceData.flush()
     return render(request, 'main.html')
 
 def order_tickers_by_returns(amount_of_tickers):
@@ -67,6 +69,34 @@ def order_tickers_by_returns(amount_of_tickers):
     tickers_price_df = tickers_price_df[top_returns.index]
     
     return tickers_price_df
+
+def select_low_correlation_stocks(number_of_stocks, correlation_threshold=0.2):
+    min_return = 0.10
+    tickers_price_df = pd.read_csv('tickers_prices.csv', index_col='Date', parse_dates=['Date'])
+    tickers_price_df.sort_index(inplace=True)
+
+    sp500_data = yf.download('^GSPC', start=tickers_price_df.index.min(), end=tickers_price_df.index.max())
+    sp500_returns = np.log(sp500_data['Adj Close'] / sp500_data['Adj Close'].shift(1)).dropna()
+    tickers_price_df['SP500'] = sp500_returns.reindex(tickers_price_df.index)
+
+    log_returns = np.log(tickers_price_df / tickers_price_df.shift(1)).dropna()
+    annual_returns = log_returns.mean() * 252
+    high_return_stocks = annual_returns[annual_returns > min_return]
+
+    high_return_data = log_returns[high_return_stocks.index.tolist() + ['SP500']]
+    correlation_matrix = high_return_data.corr()
+
+    sp500_correlations = correlation_matrix['SP500'].drop('SP500')
+    print("Correlation with S&P 500:", sp500_correlations)
+
+    selected_stocks = sp500_correlations[sp500_correlations < correlation_threshold].index.tolist()
+    print("Selected stocks based on correlation < {}: {}".format(correlation_threshold, selected_stocks))
+
+    filtered_tickers_df = tickers_price_df[selected_stocks]
+    print(filtered_tickers_df.head())
+    print(filtered_tickers_df)
+    print(selected_stocks)
+    print(len(selected_stocks))
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
     """Gets the financial data relavent to a specified stock ticker
@@ -217,7 +247,6 @@ def get_covariance(amount_of_tickers):
 
         try:
             calculation_day = covariance_entry.calculation_date
-            print(today, calculation_day)
             if today == calculation_day:
                 try:
                     S2 = covariance_entry.deserialize_matrix(covariance_entry.covariance_matrix)
@@ -231,6 +260,7 @@ def get_covariance(amount_of_tickers):
         csv_file_path = 'tickers_prices.csv'
         try:
             tickers_price_df = order_tickers_by_returns(amount_of_tickers)
+            #tickers, tickers_price_df = select_low_correlation_stocks(amount_of_tickers)
             logger.info(f"CSV file loaded successfully from {csv_file_path}")
         except FileNotFoundError:
             logger.error(f"CSV file not found at path: {csv_file_path}")
@@ -328,8 +358,9 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     amount_of_tickers = 50
 
     tickers_price_df = order_tickers_by_returns(amount_of_tickers)
-
+    
     tickers = tickers_price_df.columns.tolist() # Gives list of top tickers by returns
+    #tickers, tickers_price_df = select_low_correlation_stocks(amount_of_tickers)
 
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
@@ -350,8 +381,8 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     
     variance_expon_list = []
 
-    for i in tickers:
-        variance_expon_list.append(S2[i][i])
+    for ticker in tickers:
+        variance_expon_list.append(S2[ticker][ticker])
     stdev_expon_list = pd.Series(data = np.sqrt(variance_expon_list), index = tickers)
 
     variance_expon_df = pd.DataFrame(data = variance_expon_list, index = tickers, columns = ['Deviation'])
@@ -539,8 +570,6 @@ def build(request):
         elif request.GET.get('tickers') is not None:
             tickers = ast.literal_eval(request.GET.get('tickers'))
             sentiment_companies = sentiment(tickers)
-            print(sentiment_companies)
-            print(JsonResponse(sentiment_companies, safe=False))
             return JsonResponse(sentiment_companies, safe=False)
         
     if request.method == 'POST':
@@ -842,7 +871,6 @@ def data_output(ticker, data_type):
 
 def trade(request):
     return render(request, 'trade.html')
-
 
 def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
