@@ -114,42 +114,38 @@ Research - Portfolio Builder
             </select>
             <label>Stochastic Oscillator Value</label>
         </div>
-
-        <button class="btn waves-effect waves-light bottom" type="submit" name="action">Submit</button>
-    </div>
-</form>
+        
+            <button class="btn waves-effect waves-light bottom" type="submit" name="action">Submit</button>
+        </div>
+    </form>
 </div>
 
 <script>
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Define global variables for tickers and names
-    var tickers = JSON.parse("{{ tickers|escapejs }}");
-    var names = JSON.parse("{{ names|escapejs }}");
+    document.addEventListener('DOMContentLoaded', function() {
+        // Define global variables for tickers and names
+        var tickers = JSON.parse("{{ tickers|escapejs }}");
+        var names = JSON.parse("{{ names|escapejs }}");
 
-    // Create data object with all tickers set to null
-    var data = {};
-    for (var i = 0; i < names.length; i++) {
-        data[names[i]] = null; // Set value to null
-    }
-
-    var elems = document.querySelectorAll('.autocomplete');
-    var instances = M.Autocomplete.init(elems, {
-        data: data,
-        onAutocomplete: function(selectedItem) {
-            // Find the index of the selected item in names array
-            var index = names.indexOf(selectedItem);
-            // Set the hidden input's value to the corresponding ticker
-            if (index !== -1) {
-                document.getElementById('ticker-input').value = tickers[index];
-            }
+        // Create data object with all tickers set to null
+        var data = {};
+        for (var i = 0; i < names.length; i++) {
+            data[names[i]] = null; // Set value to null
         }
-    });
 
-    // Debug output to ensure tickers and names are loaded correctly
-    console.log('Tickers:', tickers);
-    console.log('Names:', names);
-});
+        var elems = document.querySelectorAll('.autocomplete');
+        var instances = M.Autocomplete.init(elems, {
+            data: data,
+            onAutocomplete: function(selectedItem) {
+                // Find the index of the selected item in names array
+                var index = names.indexOf(selectedItem);
+                // Set the hidden input's value to the corresponding ticker
+                if (index !== -1) {
+                    document.getElementById('ticker-input').value = tickers[index];
+                }
+            }
+        });
+    });
 </script>
 {% endblock sidebar %}
 
@@ -620,13 +616,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     var chartData = JSON.parse('{{ chart_data|escapejs }}');
     var title = '{{ title|escapejs }}';
+    var industry = '{{ industry|escapejs }}';
     var financial_data = '{{ financial_data|escapejs }}';
     
     if (title != "S&P 500"){
         var tickers = JSON.parse("{{ tickers|escapejs }}");
         var names = JSON.parse("{{ names|escapejs }}");
 
-        title = names[tickers.indexOf(title)]
+        title = names[tickers.indexOf(title)] + ' ' + industry;
     }
     const rangeBar = document.getElementById('rangeBar');
     const barContainer = document.getElementById('barContainer');

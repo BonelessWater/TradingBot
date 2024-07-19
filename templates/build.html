@@ -38,7 +38,7 @@ Build - Portfolio Builder
                 <div class="black-text">{{ form.min_var.errors }}</div>
                 {% endif %}
             </div>
-            <button class="btn waves-effect waves-light red lighten-1" type="submit" name="action">Submit</button>
+            <button class="btn waves-effect waves-light blue darken-1" type="submit" name="action">Submit</button>
         </div>
     </form>
 </div>
@@ -73,7 +73,6 @@ Build - Portfolio Builder
             transform: translate(-50%, -50%); /* This centers the div */
             z-index: 100; /* Ensure it's above other content */
         }
-
     </style>
     <div class="container">
         <!--Sharpe-->
@@ -81,12 +80,12 @@ Build - Portfolio Builder
             <div class="row">
             <canvas id="myChartSharpe"></canvas>
                 <div>
-                    <button id="{{ sharpe_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button portfolio not-calculated" value="sharpeChart">Simulate Future</button>
+                    <button id="{{ sharpe_dict.weights }}" class="waves-effect waves-light btn-large blue darken-1 custom-button portfolio not-calculated" value="sharpeChart">Simulate Future</button>
                 </div>
                 <canvas class="chart-space" id="sharpeChart" name="Portfolio Simulation" style="display: none;"></canvas>
 
                 <div>
-                    <button id="{{ sharpe_dict.tickers }}" class="waves-effect waves-light btn-large red lighten-1 custom-button news not-calculated" value="sentimentSharpeChart">Collect News Sentiments</button>
+                    <button id="{{ sharpe_dict.tickers }}" class="waves-effect waves-light btn-large blue darken-1 custom-button news not-calculated" value="sentimentSharpeChart">Collect News Sentiments</button>
                 </div>
                 <div id="chart-container" style="position: relative; width: 100%; height: 400px; display: none;">
                     <div class="preloader-wrapper active" id="loading-sentimentSharpeChart">
@@ -139,7 +138,7 @@ Build - Portfolio Builder
                             {% for key, item in sharpe_dict.financial_data.items %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small red lighten-1">
+                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small blue darken-1">
                                         {{ item.ticker }}
                                     </a>
                                 </td>
@@ -164,11 +163,11 @@ Build - Portfolio Builder
             <div class="row">
                 <canvas id="myChartReturn"></canvas>
                 <div>
-                    <button id="{{ return_dict.weights }}" class="waves-effect waves-light btn-large red lighten-1 custom-button portfolio not-calculated" value="returnChart">Simulate Future</button>
+                    <button id="{{ return_dict.weights }}" class="waves-effect waves-light btn-large blue darken-1 custom-button portfolio not-calculated" value="returnChart">Simulate Future</button>
                 </div>
 
                 <div>
-                    <button id="{{ return_dict.tickers }}" class="waves-effect waves-light btn-large red lighten-1 custom-button news not-calculated" value="sentimentReturnChart">Collect News Sentiments</button>
+                    <button id="{{ return_dict.tickers }}" class="waves-effect waves-light btn-large blue darken-1 custom-button news not-calculated" value="sentimentReturnChart">Collect News Sentiments</button>
                 </div>
                 <canvas class="chart-space" id="returnChart" name="Portfolio Simulation" style="display: none;"></canvas>
                 <div id="chart-container" style="position: relative; width: 100%; height: 400px; display: none;">
@@ -198,7 +197,7 @@ Build - Portfolio Builder
             </div>
         </div>
         <div>
-        <div class="card">
+            <div class="card">
                 <div class="card-content">
                     <div>
                         <h5 class="center card-title">Best Portfolio by Returns</h5>
@@ -221,7 +220,7 @@ Build - Portfolio Builder
                             {% for key, item in return_dict.financial_data.items %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small red lighten-1">
+                                    <a href="{% url 'research' %}?ticker={{ item.ticker }}" class="btn waves-effect waves-light btn-small blue darken-1">
                                         {{ item.ticker }}
                                     </a>
                                 </td>
@@ -240,10 +239,77 @@ Build - Portfolio Builder
                 </div>
             </div>
         </div>
+        <div class="card">
+            <div class="card-content">
+                <div>
+                    <h5 class="center card-title">Optimize your Portfolio</h5>
+                </div>
+                    <table class="highlight responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Efficient Frontier Assets</th>
+                                <th>Min-Max Weight Range</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="asset-table">
+                            <tr>
+                                <td>
+                                    <div class="input-field col s12">
+                                        <input type="text" class="autocomplete" autocomplete="off" placeholder="Enter Company Name">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="col s12">
+                                        <div class="slider"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="btn red lighten-1 delete-row">Delete</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3">
+                                    <button class="btn waves-effect waves-light blue darken-1" id="">Build</button>
+                                    <button class="btn waves-effect waves-light green accent-3" id="add-row">Add</button>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+            </div>
+        </div>
     </div>
     
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
+            // Define global variables for tickers and names
+            var tickers = JSON.parse("{{ tickers|escapejs }}");
+            var names = JSON.parse("{{ names|escapejs }}");
+            console.log(names)
+            // Create data object with all tickers set to null
+            var data = {};
+            for (var i = 0; i < names.length; i++) {
+                data[names[i]] = null; // Set value to null
+            }
+
+            var elems = document.querySelectorAll('.autocomplete');
+            var instances = M.Autocomplete.init(elems, {
+                data: data,
+                onAutocomplete: function(selectedItem) {
+                    // Find the index of the selected item in names array
+                    var index = names.indexOf(selectedItem);
+                    // Set the hidden input's value to the corresponding ticker
+                    if (index !== -1) {
+                        document.getElementById('ticker-input').value = tickers[index];
+                    }
+                }
+            });
+
+        });
+        
         function createPortfolioChart(data, id) {
             console.log(data)
             document.getElementById(id).style.display = 'block';
@@ -363,6 +429,42 @@ Build - Portfolio Builder
         }
 
         $(document).ready(function() {
+            // Initialize first slider
+            initSlider($('.slider').get(0));
+
+            // Function to initialize a noUiSlider
+            function initSlider(element) {
+                noUiSlider.create(element, {
+                    start: [20, 80],
+                    connect: true,
+                    step: 1,
+                    range: {
+                        'min': 0,
+                        'max': 100
+                    }
+                });
+            }
+
+            // Build protfolio functionality
+            $('#build').click(function() {
+
+                
+            }),
+
+            // Add row functionality
+            $('#add-row').click(function() {
+                var newRow = $('#asset-table tr:first').clone(true); // Clone the first row
+                newRow.find('input.autocomplete').val(''); // Clear the input value
+                newRow.find('.slider').empty(); // Clear previous slider
+                initSlider(newRow.find('.slider').get(0)); // Initialize new slider
+                $('#asset-table').append(newRow); // Append the new row
+            });
+
+            // Delete row functionality
+            $('#asset-table').on('click', '.delete-row', function() {
+                $(this).closest('tr').remove(); // Remove the closest row
+            });
+
             $('button.portfolio').click(function() {
                 var action = $(this).attr('value'); // Convert button Value to action
                 var chart_weights = $(this).attr('id');
@@ -384,12 +486,12 @@ Build - Portfolio Builder
                     });
                 }
 
-                if ($(this).hasClass('red lighten-1')) {
-                    $(this).removeClass('red lighten-1').addClass('teal accent-3');
+                if ($(this).hasClass('blue darken-1')) {
+                    $(this).removeClass('blue darken-1').addClass('teal accent-3');
                     $(this).text('Hide Simulation');
                     document.getElementById(action).style.display = 'block';
                 } else {
-                    $(this).removeClass('teal accent-3').addClass('red lighten-1');
+                    $(this).removeClass('teal accent-3').addClass('blue darken-1');
                     $(this).text('Simulate Future');
                     document.getElementById(action).style.display = 'none';
                 } 
@@ -419,12 +521,12 @@ Build - Portfolio Builder
                     });
                 }
 
-                if ($(this).hasClass('red lighten-1')) {
-                    $(this).removeClass('red lighten-1').addClass('teal accent-3');
+                if ($(this).hasClass('blue darken-1')) {
+                    $(this).removeClass('blue darken-1').addClass('teal accent-3');
                     $(this).text('Hide News Sentiments');
                     $('#' + chart_id).show();
                 } else {
-                    $(this).removeClass('teal accent-3').addClass('red lighten-1');
+                    $(this).removeClass('teal accent-3').addClass('blue darken-1');
                     $(this).text('Collect News Sentiments');
                     $('#' + chart_id).hide();
                 } 
@@ -651,7 +753,7 @@ Build - Portfolio Builder
                         </div>                        
                     </div>
                     <div class="card-action center">
-                        <button id="toggle-button" class="btn waves-effect waves-light red lighten-1" type="submit" name="action">Construct Portfolio
+                        <button id="toggle-button" class="btn waves-effect waves-light blue darken-1" type="submit" name="action">Construct Portfolio
                             <i class="material-icons right">build</i>
                         </button>
                     </div>
@@ -662,6 +764,6 @@ Build - Portfolio Builder
     
     {% endif %}
     <div class="fixed-action-btn">
-        <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light red bottom right "><i class="material-icons">add</i></a>
+        <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light blue darken-1 bottom right "><i class="material-icons">add</i></a>
     </div>
 {% endblock content %}

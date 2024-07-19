@@ -72,27 +72,47 @@ def order_tickers_by_returns(amount_of_tickers):
 
 def select_low_correlation_stocks(number_of_stocks, correlation_threshold=0.2):
     min_return = 0.10
+    # Read the CSV file
     tickers_price_df = pd.read_csv('tickers_prices.csv', index_col='Date', parse_dates=['Date'])
+    
+    # Ensure the DataFrame is sorted by date
     tickers_price_df.sort_index(inplace=True)
 
+    # Fetch S&P 500 data for the past 3 years
     sp500_data = yf.download('^GSPC', start=tickers_price_df.index.min(), end=tickers_price_df.index.max())
     sp500_returns = np.log(sp500_data['Adj Close'] / sp500_data['Adj Close'].shift(1)).dropna()
+
+    # Join S&P 500 returns to the tickers data
     tickers_price_df['SP500'] = sp500_returns.reindex(tickers_price_df.index)
 
+    # Calculate logarithmic returns for each ticker
     log_returns = np.log(tickers_price_df / tickers_price_df.shift(1)).dropna()
+
+    # Calculate average annual log returns assuming 252 trading days
     annual_returns = log_returns.mean() * 252
+
+    # Filter stocks with returns greater than 10%
     high_return_stocks = annual_returns[annual_returns > min_return]
 
+    # Select data for high-return stocks including SP500
     high_return_data = log_returns[high_return_stocks.index.tolist() + ['SP500']]
+
+    # Calculate the correlation matrix for these high-return stocks with SP500
     correlation_matrix = high_return_data.corr()
 
+    # Extract the correlation of each stock with the SP500 and filter for negative correlations below the threshold
     sp500_correlations = correlation_matrix['SP500'].drop('SP500')
     print("Correlation with S&P 500:", sp500_correlations)
 
+    # Select stocks based on the negative correlation threshold
     selected_stocks = sp500_correlations[sp500_correlations < correlation_threshold].index.tolist()
-    print("Selected stocks based on correlation < {}: {}".format(correlation_threshold, selected_stocks))
 
+    # Filter the original DataFrame to only include the selected tickers
     filtered_tickers_df = tickers_price_df[selected_stocks]
+
+    # Ensure you do not select more stocks than the number requested
+    selected_stocks = selected_stocks
+    filtered_tickers_df = filtered_tickers_df[selected_stocks]
     print(filtered_tickers_df.head())
     print(filtered_tickers_df)
     print(selected_stocks)
@@ -561,6 +581,8 @@ def sentiment(tickers):
     return sentiment_companies.to_json(orient='records')
     
 def build(request):   
+    
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         if request.GET.get('weights') is not None:
             weights = ast.literal_eval(request.GET.get('weights'))
@@ -574,6 +596,11 @@ def build(request):
         
     if request.method == 'POST':
         parameters = ParametersForm(request.POST)
+
+        tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))
+        tickers = json.dumps([item[0] for item in tickers_and_names])
+        names = json.dumps([item[1] for item in tickers_and_names])
+
         if parameters.is_valid():
             investment_amount = parameters.cleaned_data['amount']
             number_of_stocks = parameters.cleaned_data['amount_stocks']
@@ -582,11 +609,28 @@ def build(request):
 
             error, error_message, sharpe_data, sharpe_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_var)
             if error == True:
-                return render(request, 'build.html', {'is_post': False, 'error': True, 'message': error_message})
-            return render(request, 'build.html', {'is_post': True, 'error': False, 'message': '', 'title': 'Efficient Frontier', 'chart_type': 'scatter', 'sharpe_data': sharpe_data, 'sharpe_dict': sharpe_dict, 'return_data': return_data, 'return_dict': return_dict})
+                return render(request, 'build.html', 
+                              {'is_post': False, 
+                               'error': True, 
+                               'message': error_message})
+            return render(request, 'build.html', 
+                          {'is_post': True, 
+                           'error': False, 
+                           'message': '', 
+                           'tickers': tickers,
+                           'names': names,
+                           'title': 'Efficient Frontier', 
+                           'chart_type': 'scatter', 
+                           'sharpe_data': sharpe_data, 
+                           'sharpe_dict': sharpe_dict, 
+                           'return_data': return_data, 
+                           'return_dict': return_dict})
     
     error_message = ''
-    return render(request, 'build.html', {'is_post': False, 'error': False, 'message': error_message})
+    return render(request, 'build.html', 
+                  {'is_post': False, 
+                   'error': False, 
+                   'message': error_message})
 
 def get_stock_data(ticker, sma, ema, rsi, bollinger_bands, macd, stochastic_oscillator):
     df = pd.read_csv('tickers_prices.csv', usecols=['Date', ticker], parse_dates=['Date'])
@@ -908,6 +952,7 @@ def research(request):
         research_form = ResearchForm(request.POST)
         if research_form.is_valid():
             selected_ticker = research_form.cleaned_data['ticker']
+            industry = list(SP500Ticker.objects.filter(symbol=selected_ticker).values_list('industry', flat=True))[0]
 
             sma_value = 200 if research_form.cleaned_data.get('SMAValue', 50) is None else research_form.cleaned_data.get('SMAValue', 50)
             ema_value = 50 if research_form.cleaned_data.get('EMAValue', 50) is None else research_form.cleaned_data.get('EMAValue', 50)
@@ -925,6 +970,7 @@ def research(request):
                 'names': names,
                 'chart_data': chart_data,
                 'title': selected_ticker,
+                'industry': industry,
                 'financial_data': financial_data,
                 'valuation': valuation,
                 'finance': finance,
