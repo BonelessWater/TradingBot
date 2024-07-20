@@ -283,152 +283,38 @@ Build - Portfolio Builder
     </div>
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
 
             // Define global variables for tickers and names
             var tickers = JSON.parse("{{ tickers|escapejs }}");
             var names = JSON.parse("{{ names|escapejs }}");
-            console.log(names)
+            
             // Create data object with all tickers set to null
-            var data = {};
+            var ticker_data = {};
             for (var i = 0; i < names.length; i++) {
-                data[names[i]] = null; // Set value to null
+                ticker_data[names[i]] = null; // Set value to null
             }
 
-            var elems = document.querySelectorAll('.autocomplete');
-            var instances = M.Autocomplete.init(elems, {
-                data: data,
-                onAutocomplete: function(selectedItem) {
-                    // Find the index of the selected item in names array
-                    var index = names.indexOf(selectedItem);
-                    // Set the hidden input's value to the corresponding ticker
-                    if (index !== -1) {
-                        document.getElementById('ticker-input').value = tickers[index];
-                    }
-                }
-            });
-
-        });
-        
-        function createPortfolioChart(data, id) {
-            console.log(data)
-            document.getElementById(id).style.display = 'block';
-
-            const simulationColor = {
-                'Lowest Value': 'rgba(135, 206, 235, 1)', // Light Cyan
-                'Highest Value': 'rgba(192, 192, 192, 1)', // Silver
-                '90th Percentile': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink
-                '75th Percentile': 'rgba(144, 238, 144, 1)', // Light Green
-                '50th Percentile': 'rgba(173, 216, 230, 1)', // Light Blue
-                '25th Percentile': 'rgba(255, 182, 193, 1)' // Light Pink
-            };
-
-            // Prepare datasets for Chart.js
-            const datasets = data.datasets.map(dataset => ({
-                label: dataset.label,
-                data: dataset.data.map(point => ({ x: new Date(point.x), y: point.y })),
-                fill: false,
-                borderColor: simulationColor[dataset.label] || 'rgba(255, 99, 132, 1)',
-                backgroundColor: simulationColor[dataset.label] || 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                pointRadius: 0,
-            }));
-
-            // Function to generate random colors for the datasets
-            function getRandomColor() {
-                const letters = '0123456789ABCDEF';
-                let color = '#';
-                for (let i = 0; i < 6; i++) {
-                    color += letters[Math.floor(Math.random() * 16)];
-                }
-                return color;
-            }
-
-            // Create the chart
-            const ctx = document.getElementById(id).getContext('2d');
-            const myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: datasets
-                },
-                options: {
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'day'
-                            },
-                            title: {
-                                display: true,
-                                text: 'Date'
-                            }
-                        },
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Value'
-                            }
+            initAutocomplete(); // Initialize autocomplete on existing .autocomplete elements
+            
+            // Function to initialize autocomplete
+            function initAutocomplete() {
+                var elems = document.querySelectorAll('.autocomplete');
+                var instances = M.Autocomplete.init(elems, {
+                    data: ticker_data,
+                    limit: 5,
+                    onAutocomplete: function(selectedItem) {
+                        // Find the index of the selected item in names array
+                        var index = names.indexOf(selectedItem);
+                        // Set the hidden input's value to the corresponding ticker
+                        if (index !== -1) {
+                            var inputId = $(this).closest('tr').find('input[type="hidden"]').attr('id');
+                            $('#' + inputId).val(tickers[index])
                         }
                     }
-                }
-            });
-        }
-
-        function createNewsChart(data, id){
-            data = JSON.parse(data);
-            const labels = data.map(item => item.Ticker);
-            const negData = data.map(item => item.neg);
-            const neuData = data.map(item => item.neu);
-            const posData = data.map(item => item.pos); 
-            const compData = data.map(item => item.compound);
-            const ctx = document.getElementById(id).getContext('2d');
-
-            const sentimentChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Negative Sentiment',
-                            data: negData,
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Neutral Sentiment',
-                            data: neuData,
-                            backgroundColor: 'rgba(211, 211, 0, 0.2)',
-                            borderColor: 'rgba(211, 211, 0, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Positive Sentiment',
-                            data: posData,
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'General Sentiment',
-                            data: compData,
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-        }
-
-        $(document).ready(function() {
+                });
+            }            
+            
             // Initialize first slider
             initSlider($('.slider').get(0));
 
@@ -445,19 +331,20 @@ Build - Portfolio Builder
                 });
             }
 
-            // Build protfolio functionality
-            $('#build').click(function() {
-
-                
-            }),
-
             // Add row functionality
-            $('#add-row').click(function() {
-                var newRow = $('#asset-table tr:first').clone(true); // Clone the first row
-                newRow.find('input.autocomplete').val(''); // Clear the input value
-                newRow.find('.slider').empty(); // Clear previous slider
-                initSlider(newRow.find('.slider').get(0)); // Initialize new slider
-                $('#asset-table').append(newRow); // Append the new row
+            $('#add-row').on('click', function() {
+                var newRow = $('#asset-table tr:first').clone(true);
+                newRow.find('input.autocomplete').val('').removeClass('initialized');
+
+                // Generate a unique identifier for new elements
+                var uniqueId = new Date().getTime();
+                newRow.find('input[type="hidden"]').attr('id', 'ticker-input-' + uniqueId);
+
+                newRow.find('.slider').empty();
+                $('#asset-table').append(newRow);
+
+                initSlider(newRow.find('.slider').get(0));
+                initAutocomplete(); // Re-initialize autocomplete for the new row
             });
 
             // Delete row functionality
@@ -531,10 +418,7 @@ Build - Portfolio Builder
                     $('#' + chart_id).hide();
                 } 
             });
-        });
-        var chartType = '{{ chart_type|escapejs }}';
-
-        document.addEventListener('DOMContentLoaded', function () {
+            
             // Initialize tooltips
             const tooltippedElements = document.querySelectorAll('.tooltipped');
             M.Tooltip.init(tooltippedElements);
@@ -720,6 +604,127 @@ Build - Portfolio Builder
         createChart(total_data[1], id_return);
 
         });
+        
+        function createPortfolioChart(data, id) {
+            console.log(data)
+            document.getElementById(id).style.display = 'block';
+
+            const simulationColor = {
+                'Lowest Value': 'rgba(135, 206, 235, 1)', // Light Cyan
+                'Highest Value': 'rgba(192, 192, 192, 1)', // Silver
+                '90th Percentile': 'rgba(255, 99, 132, 1)', // Default Chart.js Pink
+                '75th Percentile': 'rgba(144, 238, 144, 1)', // Light Green
+                '50th Percentile': 'rgba(173, 216, 230, 1)', // Light Blue
+                '25th Percentile': 'rgba(255, 182, 193, 1)' // Light Pink
+            };
+
+            // Prepare datasets for Chart.js
+            const datasets = data.datasets.map(dataset => ({
+                label: dataset.label,
+                data: dataset.data.map(point => ({ x: new Date(point.x), y: point.y })),
+                fill: false,
+                borderColor: simulationColor[dataset.label] || 'rgba(255, 99, 132, 1)',
+                backgroundColor: simulationColor[dataset.label] || 'rgba(255, 99, 132, 1)',
+                borderWidth: 1,
+                pointRadius: 0,
+            }));
+
+            // Function to generate random colors for the datasets
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            // Create the chart
+            const ctx = document.getElementById(id).getContext('2d');
+            const myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createNewsChart(data, id){
+            data = JSON.parse(data);
+            const labels = data.map(item => item.Ticker);
+            const negData = data.map(item => item.neg);
+            const neuData = data.map(item => item.neu);
+            const posData = data.map(item => item.pos); 
+            const compData = data.map(item => item.compound);
+            const ctx = document.getElementById(id).getContext('2d');
+
+            const sentimentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Negative Sentiment',
+                            data: negData,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Neutral Sentiment',
+                            data: neuData,
+                            backgroundColor: 'rgba(211, 211, 0, 0.2)',
+                            borderColor: 'rgba(211, 211, 0, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Positive Sentiment',
+                            data: posData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'General Sentiment',
+                            data: compData,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        var chartType = '{{ chart_type|escapejs }}';
+
     </script>
     {% else %}
     <style>
