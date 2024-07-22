@@ -256,7 +256,7 @@ Build - Portfolio Builder
                             <tr>
                                 <td>
                                     <div class="input-field col s12">
-                                        <input type="text" class="autocomplete" autocomplete="off" placeholder="Enter Company Name">
+                                        <input type="text" class="ticker autocomplete" autocomplete="off" placeholder="Enter Company Name">
                                     </div>
                                 </td>
                                 <td>
@@ -272,7 +272,7 @@ Build - Portfolio Builder
                         <tfoot>
                             <tr>
                                 <td colspan="3">
-                                    <button class="btn waves-effect waves-light blue darken-1" id="">Build</button>
+                                    <button class="btn waves-effect waves-light blue darken-1" id="build">Build</button>
                                     <button class="btn waves-effect waves-light green accent-3" id="add-row">Add</button>
                                 </td>
                             </tr>
@@ -330,6 +330,30 @@ Build - Portfolio Builder
                     }
                 });
             }
+            
+            $('#build').on('click', function () {
+                console.log(1)
+                var build_tickers = [];
+
+                $('.ticker').each(function() {
+                    build_tickers.push(tickers[names.indexOf($(this).val())]); // Gives tickers of the company names
+                });
+
+                var tickerParams = build_tickers.join(',');
+
+                $.ajax({
+                    url: '{% url "build" %}?build_tickers=' + encodeURIComponent(tickerParams),
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log(response);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error:', error);
+                    }
+                });
+
+            });
 
             // Add row functionality
             $('#add-row').on('click', function() {
@@ -384,7 +408,7 @@ Build - Portfolio Builder
                 } 
             });
             $('button.news').click(function() {
-                var tickers = $(this).attr('id');
+                var news_tickers = $(this).attr('id');
                 var chart_id = $(this).attr('value');
 
                 if ($(this).hasClass('not-calculated')) {
@@ -394,7 +418,7 @@ Build - Portfolio Builder
                     $('#loading-' + chart_id).show();
                     
                     $.ajax({
-                        url: '{% url "build" %}?tickers=' + tickers,
+                        url: '{% url "build" %}?tickers=' + news_tickers,
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
@@ -587,13 +611,13 @@ Build - Portfolio Builder
         // Updating total_data with the zipped tickers and weights string
         for (var i = 0; i < 2; i++) {
             var data = total_data[i].weights;
-            var tickers = JSON.parse(financial_info[i]);
+            var weight_tickers = JSON.parse(financial_info[i]);
 
             var labelstr = [];
             for (var j = 0; j < data.length; j++) {
                 var temp = '';
-                for (var k = 0; k < tickers.length; k++){
-                    temp += `${tickers[k]}: ${String((data[j][k]).toFixed(2))} `;
+                for (var k = 0; k < weight_tickers.length; k++){
+                    temp += `${weight_tickers[k]}: ${String((data[j][k]).toFixed(2))} `;
                 }
                 labelstr.push(temp)
             }

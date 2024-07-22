@@ -180,7 +180,7 @@ Research - Portfolio Builder
                 <h6 class="center" id="dataInfo"></h6>
             </div>
             <div>
-                <button id="simulate" class="waves-effect waves-light btn-large red lighten-1 custom-button" value="simulate">Simulate Future</button>
+                <button id="simulate" class="waves-effect waves-light btn-large blue darken-1 custom-button" value="simulate">Simulate Future</button>
             </div>
         </div>
     </div>
@@ -231,16 +231,16 @@ Research - Portfolio Builder
                 
                 <div class="row">
                     <div class="col s3 center">
-                        <button name="dataButton" value="CASH_FLOW" class="waves-effect waves-light btn-large red lighten-1">Cash Flow</button>
+                        <button name="dataButton" value="CASH_FLOW" class="waves-effect waves-light btn-large blue darken-1">Cash Flow</button>
                     </div>
                     <div class="col s3 center">
-                        <button name="dataButton" value="INCOME_STATEMENT" class="waves-effect waves-light btn-large red lighten-1">Income Statement</button>
+                        <button name="dataButton" value="INCOME_STATEMENT" class="waves-effect waves-light btn-large blue darken-1">Income Statement</button>
                     </div>
                     <div class="col s3 center">
-                        <button name="dataButton" value="BALANCE_SHEET" class="waves-effect waves-light btn-large red lighten-1">Balance Sheet</button>
+                        <button name="dataButton" value="BALANCE_SHEET" class="waves-effect waves-light btn-large blue darken-1">Balance Sheet</button>
                     </div>
                     <div class="col s3 center">
-                        <button name="dataButton" value="EARNINGS" class="waves-effect waves-light btn-large red lighten-1">Earnings</button>
+                        <button name="dataButton" value="EARNINGS" class="waves-effect waves-light btn-large blue darken-1">Earnings</button>
                     </div>
                 </div>
 
@@ -252,7 +252,7 @@ Research - Portfolio Builder
 </div>
 
 <div class="fixed-action-btn">
-    <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light red lighten-1 bottom right "><i class="material-icons">add</i></a>
+    <a id="toggle-button" class="btn-floating btn-large waves-effect waves-light blue darken-1 bottom right "><i class="material-icons">add</i></a>
 </div>
 <script src="https://unpkg.com/chartjs-plugin-zoom"></script>
 
@@ -555,15 +555,15 @@ Research - Portfolio Builder
             var action = $(this).attr('value'); // Convert button Value to action
 
             if (action != 'simulate'){
-                $('button').removeClass('teal accent-3').addClass('red lighten-1');
-                $(this).removeClass('red lighten-1').addClass('teal accent-3');
+                $('button').removeClass('teal accent-3').addClass('blue darken-1');
+                $(this).removeClass('blue darken-1').addClass('teal accent-3');
 
             } else {
-                $(this).removeClass('red lighten-1').addClass('teal accent-3');
+                $(this).removeClass('blue darken-1').addClass('teal accent-3');
 
             }
 
-            // Remove 'green' class from all buttons and add 'red lighten-1' to ensure they are all red
+            // Remove 'green' class from all buttons and add 'blue darken-1' to ensure they are all red
             var ticker = '{{ title|escapejs }}';
             $.ajax({
                 url: '{% url "research" %}?action=' + action + '&ticker=' + ticker,

@@ -582,7 +582,6 @@ def sentiment(tickers):
     
 def build(request):   
     
-
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         if request.GET.get('weights') is not None:
             weights = ast.literal_eval(request.GET.get('weights'))
@@ -594,6 +593,11 @@ def build(request):
             sentiment_companies = sentiment(tickers)
             return JsonResponse(sentiment_companies, safe=False)
         
+        elif request.GET.get('build_tickers') is not None:
+            build_tickers = request.GET.get('build_tickers')
+            print(build_tickers)
+            return 'success'
+
     if request.method == 'POST':
         parameters = ParametersForm(request.POST)
 

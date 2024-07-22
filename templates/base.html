@@ -34,6 +34,88 @@
     </title>
 </head>
 <body>
+    <style>
+        .btn {
+            background-color: #1e88e5; /* Blue darken-1 */
+            color: white;
+        }
+        .error {
+            color: red;
+        }
+        input[type="checkbox"].filled-in:checked + span::before {
+            border: 2px solid #1e88e5 !important;
+            background-color: #1e88e5 !important;
+        }
+        input[type="checkbox"].filled-in:checked + span::after {
+            border: 2px solid  #1e88e5 !important;
+            background-color:  #1e88e5 !important;
+        }
+        input[type="radio"]:checked + span::after {
+            background-color: #1e88e5;
+        }
+        input[type="radio"]:checked + span::before {
+            border: 2px solid #1e88e5;
+        }
+        .input-field input[type=text]:focus-visible {
+            border-bottom: #1e88e5;
+        }
+        input:not([type]):focus:not([readonly]),input[type=text]:not(.browser-default):focus:not([readonly]),input[type=password]:not(.browser-default):focus:not([readonly]),input[type=email]:not(.browser-default):focus:not([readonly]),input[type=url]:not(.browser-default):focus:not([readonly]),input[type=time]:not(.browser-default):focus:not([readonly]),input[type=date]:not(.browser-default):focus:not([readonly]),input[type=datetime]:not(.browser-default):focus:not([readonly]),input[type=datetime-local]:not(.browser-default):focus:not([readonly]),input[type=tel]:not(.browser-default):focus:not([readonly]),input[type=number]:not(.browser-default):focus:not([readonly]),input[type=search]:not(.browser-default):focus:not([readonly]),textarea.materialize-textarea:focus:not([readonly]) {
+            border-bottom: #1e88e5;
+            -webkit-box-shadow: #1e88e5;
+            box-shadow: #1e88e5;
+        }
+        .input-field .prefix.active {
+            color: #1e88e5;
+        }
+        [type="radio"]:checked+span:after,[type="radio"].with-gap:checked+span:before,[type="radio"].with-gap:checked+span:after {
+            border: #1e88e5;
+        }
+        [type="radio"]:checked+span:after,[type="radio"].with-gap:checked+span:after {
+            background-color: #1e88e5
+        }
+        [type="checkbox"]:checked+span:not(.lever):before {
+            border-right: #1e88e5;
+            border-bottom: #1e88e5;
+        }
+        [type="checkbox"]:indeterminate+span:not(.lever):before {
+            border-right: #1e88e5;
+        }
+        [type="checkbox"].filled-in:checked+span:not(.lever):after {
+            border: #1e88e5;
+            background-color: #1e88e5;
+        }
+        [type="checkbox"].filled-in.tabbed:checked:focus+span:not(.lever):after {
+            background-color: #1e88e5;
+            border-color: #1e88e5;
+        }
+        .switch label input[type=checkbox]:checked+.lever:after {
+            background-color: #1e88e5;
+        }
+        .select-wrapper input.select-dropdown:focus {
+            border-bottom: #1e88e5;
+        }
+        input[type=range]+.thumb {
+            background-color: #1e88e5;
+        }
+        input[type=range]+.thumb .value {
+            color: #1e88e5;
+        }
+        .datepicker-date-display {
+            background-color: #1e88e5;
+        }
+        .datepicker-table td.is-today {
+            color: #1e88e5
+        }
+        .datepicker-table td.is-selected {
+            background-color: #1e88e5;
+        }
+        .datepicker-cancel,.datepicker-clear,.datepicker-today,.datepicker-done {
+            color: #1e88e5;
+        }
+        .timepicker-digital-display {
+            background-color: #1e88e5;
+        }
+    </style>
     <div class="main-container">
         <nav>
             <div class="nav-wrapper white z-depth-2" style="position: relative;">
