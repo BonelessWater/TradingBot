@@ -49,9 +49,12 @@ def main(request):
     CovarianceData.flush()
     return render(request, 'main.html')
 
-def order_tickers_by_returns(amount_of_tickers):
+def order_tickers_by_returns(amount_of_tickers, tickers=None):
     # Read the CSV file
     tickers_price_df = pd.read_csv('tickers_prices.csv', index_col='Date', parse_dates=['Date'])
+    
+    if tickers and isinstance(tickers, list):
+        return tickers_price_df[tickers]
     
     # Ensure the DataFrame is sorted by date
     tickers_price_df.sort_index(inplace=True)
@@ -237,7 +240,7 @@ def g_mean(x):
     a = np.log(x)
     return np.exp(a.mean())
 
-def get_covariance(amount_of_tickers):
+def get_covariance(amount_of_tickers, build_tickers=None):
     """Gets or calculates the covarainces matrix of the sp500's closing prices. if already calculated, it is fetched from a database
 
     Returns
@@ -250,6 +253,14 @@ def get_covariance(amount_of_tickers):
     ValueError
         raises value errors for debugging
     """
+    
+    # If tickers is a list then it will likely not be saved in the database so we can skip all this error checking and efficiency and jump straight into the calculation
+    if build_tickers and isinstance(build_tickers, list):
+        tickers_price_df = order_tickers_by_returns(amount_of_tickers, build_tickers)
+        S2 = exp_cov(tickers_price_df, frequency=252, span=60, log_returns=True)  # Adjust frequency and span as needed
+        S2 = (S2 + S2.T) / 2  # Ensure symmetry
+        return S2
+    
     try:
         # Query all symbols from the database
         tickers = list(SP500Ticker.objects.all().order_by('id').values_list('symbol', flat=True))
@@ -279,7 +290,7 @@ def get_covariance(amount_of_tickers):
         # If not during the restricted time and no entry was found or deserialization failed
         csv_file_path = 'tickers_prices.csv'
         try:
-            tickers_price_df = order_tickers_by_returns(amount_of_tickers)
+            tickers_price_df = order_tickers_by_returns(amount_of_tickers, tickers)
             #tickers, tickers_price_df = select_low_correlation_stocks(amount_of_tickers)
             logger.info(f"CSV file loaded successfully from {csv_file_path}")
         except FileNotFoundError:
@@ -326,7 +337,7 @@ def get_covariance(amount_of_tickers):
         logger.error(f"Unexpected error in get_covariance: {e}")
         raise
 
-def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
+def get_portfolio(investment_amount=0, number_of_stocks=0, min_var=100, build_tickers=None, build=False):
     """returns the efficient portfolio of the number of stocks the user specifies
 
     Parameters
@@ -335,59 +346,47 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
         the amount in units, that the user would like to invest
     number_of_stocks : int
         the number of stocks the user whats to consider
-    horizon : int
-        the amount of time the user expects to invest before liquidation
     min_var : float
         the minimun value at risk that the user is willing to incur
-
+    tickers : int / list
+        if variables is an array it computes the portfolio with the given tickers
     Returns
     -------
-    error, error message, best protfolio by sharpe ratio, sharpe ratio stock info, best portfolio by returns, returns stock info
+    if tickers == 0:
+        return error, error message, best protfolio by sharpe ratio, sharpe ratio stock info, best portfolio by returns, returns stock info
+    else:
+        return error, error message, best protfolio by sharpe ratio, sharpe ratio stock info
     """
     # Error checkers
     error = False
     message = ''
+    if build_tickers == None:
+        if not isinstance(investment_amount, decimal.Decimal):
+            message = 'Your investment amount should be a number'
+            return True, message, 0,0,0,0
+        elif type(number_of_stocks) != int:
+            message = 'Your number of stocks should be a whole number'
+            return True, message, 0,0,0,0
 
-    if not isinstance(investment_amount, decimal.Decimal):
-        message = 'Your investment amount should be a number'
-        return True, message, 0,0,0,0
-    elif type(number_of_stocks) != int:
-        message = 'Your number of stocks should be a whole number'
-        return True, message, 0,0,0,0
-    elif type(horizon) != int or type(horizon) == float:
-        message = 'Your investment horizon should be a number'
-        return True, message, 0,0,0,0
-
-    horizon = round(horizon)
-
-    if investment_amount < 0:
-        message = 'You must invest more than one unit'
-        return True, message, 0,0,0,0
-    elif number_of_stocks <= 0:
-        message = 'You must build your portfolio with more than one stock'
-        return True, message, 0,0,0,0
-    elif number_of_stocks > 50:
-        message = 'You have chosen too many stocks, just invest in the sp500 at that point'
-        return True, message, 0,0,0,0
-    elif horizon <= 0:
-        message = 'What are you trying to look into the past? Choose a larger horizon'
-        return True, message, 0,0,0,0
-    
-    horizon = np.sqrt(horizon)
+        if investment_amount < 0:
+            message = 'You must invest more than one unit'
+            return True, message, 0,0,0,0
+        elif number_of_stocks <= 0:
+            message = 'You must build your portfolio with more than one stock'
+            return True, message, 0,0,0,0
+        elif number_of_stocks > 50:
+            message = 'You have chosen too many stocks, just invest in the sp500 at that point'
+            return True, message, 0,0,0,0
 
     amount_of_tickers = 50
+    if build_tickers:
+        amount_of_tickers = number_of_stocks = len(build_tickers)
 
-    tickers_price_df = order_tickers_by_returns(amount_of_tickers)
-    
+    tickers_price_df = order_tickers_by_returns(amount_of_tickers, build_tickers)
     tickers = tickers_price_df.columns.tolist() # Gives list of top tickers by returns
-    #tickers, tickers_price_df = select_low_correlation_stocks(amount_of_tickers)
-
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
-    start = t.time()
-    S2 = get_covariance(amount_of_tickers)
-    end = t.time()    
-    print(end-start)
+    S2 = get_covariance(amount_of_tickers, build_tickers)
 
     mu2.name = None
     mu2 = mu2.fillna(0)
@@ -475,12 +474,22 @@ def get_portfolio(investment_amount, number_of_stocks, horizon, min_var):
     for symbol in weights_return:
         valuation_return, finance_return, financial_data_return[symbol] = get_financial_data(symbol, investment_amount, weights_return[symbol])
 
-    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 'finance_sharpe': finance_sharpe, 'financial_data': financial_data_sharpe, 'tickers': json.dumps(tickers_sharpe), 'weights': str(dict(weights_sharpe))}
-    return_dict = {'valuation_return': valuation_return, 'finance_return': finance_return, 'financial_data': financial_data_return, 'tickers': json.dumps(tickers_return), 'weights': str(dict(weights_return))}
+    sharpe_dict = {'valuation_sharpe': valuation_sharpe, 
+                   'finance_sharpe': finance_sharpe, 
+                   'financial_data': financial_data_sharpe, 
+                   'tickers': json.dumps(tickers_sharpe), 
+                   'weights': str(dict(weights_sharpe))}
+    return_dict = {'valuation_return': valuation_return, 
+                   'finance_return': finance_return, 
+                   'financial_data': financial_data_return, 
+                   'tickers': json.dumps(tickers_return), 
+                   'weights': str(dict(weights_return))}
 
     sharpe_data = json.dumps(data_dict_sharpe)
     return_data = json.dumps(data_dict_return)
-    
+
+    if build == True:
+        return sharpe_data, sharpe_dict
     return error, message, sharpe_data, sharpe_dict, return_data, return_dict
 
 def monte_carlo(ticker_or_weights):
@@ -595,8 +604,10 @@ def build(request):
         
         elif request.GET.get('build_tickers') is not None:
             build_tickers = request.GET.get('build_tickers')
-            print(build_tickers)
-            return 'success'
+            build_tickers = build_tickers.split(',')
+            sharpe_data, sharpe_dict = get_portfolio(build_tickers=build_tickers, build=True)
+            data = {'build_data': sharpe_data, 'build_dict': sharpe_dict}
+            return JsonResponse(data)
 
     if request.method == 'POST':
         parameters = ParametersForm(request.POST)
@@ -608,10 +619,13 @@ def build(request):
         if parameters.is_valid():
             investment_amount = parameters.cleaned_data['amount']
             number_of_stocks = parameters.cleaned_data['amount_stocks']
-            horizon = parameters.cleaned_data['horizon']
             min_var = parameters.cleaned_data['min_var']
 
-            error, error_message, sharpe_data, sharpe_dict, return_data, return_dict = get_portfolio(investment_amount, number_of_stocks, horizon, min_var)
+            error, error_message, sharpe_data, sharpe_dict, return_data, return_dict = get_portfolio(
+                investment_amount=investment_amount, 
+                number_of_stocks=number_of_stocks, 
+                min_var=min_var)
+            
             if error == True:
                 return render(request, 'build.html', 
                               {'is_post': False, 
@@ -930,7 +944,6 @@ def research(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
 
         ticker = request.GET.get('ticker')
-        print(request.GET.get('action'))
         if request.GET.get('action') == 'simulate':
             data = monte_carlo(ticker)
             return JsonResponse(data)

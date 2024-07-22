@@ -25,13 +25,6 @@ Build - Portfolio Builder
                 {% endif %}
             </div>
             <div class="input-field col s12">
-                <input placeholder="Investment Horizon (months)" id="horizon" type="text" class="validate black-text" name="horizon" value="{{ form.horizon.value|default_if_none:'' }}">
-                <label for="horizon" class="black-text">{{ form.horizon.label }}</label>
-                {% if form.horizon.errors %}
-                <div class="black-text">{{ form.horizon.errors }}</div>
-                {% endif %}
-            </div>
-            <div class="input-field col s12">
                 <input placeholder="Target Volatility" id="min_var" type="text" class="validate black-text" name="min_var" value="{{ form.min_var.value|default_if_none:'' }}">
                 <label for="min_var" class="black-text">{{ form.min_var.label }}</label>
                 {% if form.min_var.errors %}
@@ -74,7 +67,82 @@ Build - Portfolio Builder
             z-index: 100; /* Ensure it's above other content */
         }
     </style>
+
     <div class="container">
+        <!-- Optimize your Portfolio -->
+        <div class="card">
+            <div class="card-content">
+                <div>
+                    <h5 class="center card-title">Optimize your Portfolio</h5>
+                </div>
+                <table class="highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Efficient Frontier Assets</th>
+                            <th>Min-Max Weight Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asset-table">
+                        <tr>
+                            <td>
+                                <div class="input-field col s12">
+                                    <input type="text" class="ticker autocomplete" autocomplete="off" placeholder="Enter Company Name">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="col s12">
+                                    <div class="slider"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <button class="btn red lighten-1 delete-row">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3">
+                                <button class="btn waves-effect waves-light blue darken-1" id="build">Build</button>
+                                <button class="btn waves-effect waves-light green accent-3" id="add-row">Add</button>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div class="row buildChart" style="display: none;">
+                    <canvas id="myChartBuild"></canvas>
+                    <div>
+                        <h5 class="center card-title">Optimized Portfolio</h5>
+                    </div>
+                    <table class="highlight">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Investment %</th>
+                                <th>Investment Amt.</th>
+                                <th>Market Cap</th>
+                                <th>Enterprise Value</th>
+                                <th>Trailing P/E</th>
+                                <th>Forward P/E</th>
+                                <th>PEG Ratio</th>
+                                <th>Price/Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody id="optimized-portfolio-body">
+
+                        </tbody>
+                    </table>
+                    <div>
+                        <button id="{{ build_dict.weights }}" class="waves-effect waves-light btn-large blue darken-1 custom-button portfolio not-calculated" value="buildChart">Simulate Future</button>
+                    </div>
+                    <div>
+                        <button id="{{ build_dict.tickers }}" class="waves-effect waves-light btn-large blue darken-1 custom-button news not-calculated" value="sentimentBuildChart">Collect News Sentiments</button>
+                    </div>
+                    <canvas class="chart-space" id="buildChart" name="Portfolio Simulation" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+
         <!--Sharpe-->
         <div class="col s12">
             <div class="row">
@@ -118,7 +186,7 @@ Build - Portfolio Builder
             <div class="card">
                 <div class="card-content">
                     <div>
-                        <h5 class="center card-title">Best Portfolio by Sharpe Ratio</h5>
+                        <h5 class="center card-title highlight">Best Portfolio by Sharpe Ratio</h5>
                     </div>
                     <table>
                         <thead>
@@ -157,8 +225,8 @@ Build - Portfolio Builder
                 </div>
             </div>
         </div>
-        <!--Returns-->
 
+        <!--Returns-->
         <div class="col s12">
             <div class="row">
                 <canvas id="myChartReturn"></canvas>
@@ -200,7 +268,7 @@ Build - Portfolio Builder
             <div class="card">
                 <div class="card-content">
                     <div>
-                        <h5 class="center card-title">Best Portfolio by Returns</h5>
+                        <h5 class="center card-title highlight">Best Portfolio by Returns</h5>
                     </div>
                     <table>
                         <thead>
@@ -239,47 +307,7 @@ Build - Portfolio Builder
                 </div>
             </div>
         </div>
-        <div class="card">
-            <div class="card-content">
-                <div>
-                    <h5 class="center card-title">Optimize your Portfolio</h5>
-                </div>
-                    <table class="highlight responsive-table">
-                        <thead>
-                            <tr>
-                                <th>Efficient Frontier Assets</th>
-                                <th>Min-Max Weight Range</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="asset-table">
-                            <tr>
-                                <td>
-                                    <div class="input-field col s12">
-                                        <input type="text" class="ticker autocomplete" autocomplete="off" placeholder="Enter Company Name">
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="col s12">
-                                        <div class="slider"></div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn red lighten-1 delete-row">Delete</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="3">
-                                    <button class="btn waves-effect waves-light blue darken-1" id="build">Build</button>
-                                    <button class="btn waves-effect waves-light green accent-3" id="add-row">Add</button>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-            </div>
-        </div>
+        
     </div>
     
     <script>
@@ -332,7 +360,6 @@ Build - Portfolio Builder
             }
             
             $('#build').on('click', function () {
-                console.log(1)
                 var build_tickers = [];
 
                 $('.ticker').each(function() {
@@ -346,7 +373,47 @@ Build - Portfolio Builder
                     type: 'GET',
                     dataType: 'json',
                     success: function(response) {
-                        console.log(response);
+                        build_data = JSON.parse(response.build_data);
+                        build_tickers = JSON.parse(response.build_dict.tickers);
+
+                        build_info = response.build_dict.financial_data;    
+                        console.log(build_info)
+
+                        var data = build_data.weights;
+                        var weight_tickers = build_tickers;
+
+                        var labelstr = [];
+                        for (var j = 0; j < data.length; j++) {
+                            var temp = '';
+                            for (var k = 0; k < weight_tickers.length; k++){
+                                temp += `${weight_tickers[k]}: ${String((data[j][k]).toFixed(2))} `;
+                            }
+                            labelstr.push(temp)
+                        }
+                        build_data.label = labelstr;
+                        console.log(labelstr);
+
+                        identifier = 'myChartBuild'
+                        $('.buildChart').show();
+
+                        $('#optimized-portfolio-body').empty();
+
+                        for (const [key, item] of Object.entries(build_info)) {
+                            var row = `<tr>
+                                <td><a href="{% url 'research' %}?ticker=${item.ticker}" class="btn waves-effect waves-light btn-small blue darken-1">${item.ticker}</a></td>
+                                <td>${item.percentage}</td>
+                                <td>${item.investmentamount}</td>
+                                <td>${item.marketcap}</td>
+                                <td>${item.enterprisevalue}</td>
+                                <td>${item.trailingpe}</td>
+                                <td>${item.forwardpe}</td>
+                                <td>${item.pegratio}</td>
+                                <td>${item.pricesales}</td>
+                            </tr>`;
+                            $('#optimized-portfolio-body').append(row);
+                        }
+
+                        createChart(build_data, identifier);
                     },
                     error: function(xhr, status, error) {
                         console.error('Error:', error);
@@ -389,7 +456,6 @@ Build - Portfolio Builder
                         dataType: 'json',
                         success: function(response) {
                             createPortfolioChart(response, action);
-                            
                         },
                         error: function(xhr, status, error) {
                             console.error('Error:', error);
@@ -407,6 +473,7 @@ Build - Portfolio Builder
                     document.getElementById(action).style.display = 'none';
                 } 
             });
+
             $('button.news').click(function() {
                 var news_tickers = $(this).attr('id');
                 var chart_id = $(this).attr('value');
@@ -630,7 +697,6 @@ Build - Portfolio Builder
         });
         
         function createPortfolioChart(data, id) {
-            console.log(data)
             document.getElementById(id).style.display = 'block';
 
             const simulationColor = {

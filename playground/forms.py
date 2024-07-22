@@ -3,7 +3,6 @@ from django import forms
 class ParametersForm(forms.Form):
     amount = forms.DecimalField(label='Investment amount')
     amount_stocks = forms.IntegerField(label='Number of Stocks')
-    horizon = forms.IntegerField(label='Time horizon (months)')
     min_var = forms.DecimalField(label='Target Volatity')
 
 class ResearchForm(forms.Form):
