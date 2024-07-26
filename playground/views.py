@@ -45,15 +45,17 @@ ALPHA_KEY = os.getenv('ALPHA_KEY')
 logger = logging.getLogger(__name__)
 
 def main(request):
-    select_low_correlation_stocks(0)
     CovarianceData.flush()
     return render(request, 'main.html')
 
 def order_tickers_by_returns(amount_of_tickers, tickers=None):
+
+    print(amount_of_tickers)
+    print(tickers)
     # Read the CSV file
     tickers_price_df = pd.read_csv('tickers_prices.csv', index_col='Date', parse_dates=['Date'])
     
-    if tickers and isinstance(tickers, list):
+    if tickers and isinstance(tickers, list) and len(tickers) < 499:
         return tickers_price_df[tickers]
     
     # Ensure the DataFrame is sorted by date
@@ -70,9 +72,12 @@ def order_tickers_by_returns(amount_of_tickers, tickers=None):
     
     # Filter the original DataFrame to only include the top tickers
     tickers_price_df = tickers_price_df[top_returns.index]
-    
+
+    print(tickers_price_df.shape)
+
     return tickers_price_df
 
+'''
 def select_low_correlation_stocks(number_of_stocks, correlation_threshold=0.2):
     min_return = 0.10
     # Read the CSV file
@@ -120,6 +125,7 @@ def select_low_correlation_stocks(number_of_stocks, correlation_threshold=0.2):
     print(filtered_tickers_df)
     print(selected_stocks)
     print(len(selected_stocks))
+'''
 
 def get_financial_data(symbol, investment_amount = -1, weight = 0.0):
     """Gets the financial data relavent to a specified stock ticker
@@ -305,9 +311,6 @@ def get_covariance(amount_of_tickers, build_tickers=None):
             logger.error("Tickers price DataFrame is empty.")
             raise ValueError("Tickers price DataFrame is empty.")
 
-        # Handle missing values by filling with 0
-        tickers_price_df.fillna(value=0, inplace=True)
-
         # Log the size of the DataFrame
         logger.info(f"Size of DataFrame: {tickers_price_df.shape}")
         logger.info(f"Missing values {tickers_price_df.isnull().sum()}")
@@ -315,6 +318,7 @@ def get_covariance(amount_of_tickers, build_tickers=None):
         # Calculate covariance matrix
         try:
             logger.info('Calculated covariance matrix!!!')
+            
             S2 = exp_cov(tickers_price_df, frequency=252, span=60, log_returns=True)  # Adjust frequency and span as needed
             S2 = (S2 + S2.T) / 2  # Ensure symmetry
             if S2.empty:
@@ -323,13 +327,18 @@ def get_covariance(amount_of_tickers, build_tickers=None):
         except Exception as e:
             logger.error(f"Error calculating covariance matrix: {e}")
             raise ValueError(f"Error calculating covariance matrix: {e}")
+        
+        print('saving data')
 
+        start = t.time()
         # Save the new result in the database
         CovarianceData.objects.update_or_create(
             tickers=tickers_str,
             calculation_date=today,
             defaults={'covariance_matrix': S2.to_json()}
         )
+        print(t.time()-start)
+
         logger.info("Covariance matrix calculated and saved successfully.")
 
         return S2
@@ -382,7 +391,9 @@ def get_portfolio(investment_amount=0, number_of_stocks=0, min_var=100, build_ti
     if build_tickers:
         amount_of_tickers = number_of_stocks = len(build_tickers)
 
+    start = t.time()
     tickers_price_df = order_tickers_by_returns(amount_of_tickers, build_tickers)
+    print(f'time to calculate tickers price df {t.time()-start}')
     tickers = tickers_price_df.columns.tolist() # Gives list of top tickers by returns
     mu2 = ema_historical_return(tickers_price_df, compounding=True, frequency=len(tickers_price_df), span=len(tickers_price_df), log_returns=True)
 
