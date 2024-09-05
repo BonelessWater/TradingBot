@@ -79,9 +79,9 @@ Build - Portfolio Builder
                     <thead>
                         <tr>
                             <th>Efficient Frontier Assets</th>
-                            <!--
-                            <th>Min-Max Weight Range</th>
-                            -->
+                            
+                            <!--<th>Min-Max Weight Range</th>-->
+                        
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -346,22 +346,7 @@ Build - Portfolio Builder
                     }
                 });
             }            
-            
-            // Initialize first slider
-            initSlider($('.slider').get(0));
-
-            // Function to initialize a noUiSlider
-            function initSlider(element) {
-                noUiSlider.create(element, {
-                    start: [20, 80],
-                    connect: true,
-                    step: 1,
-                    range: {
-                        'min': 0,
-                        'max': 100
-                    }
-                });
-            }
+    
             
             $('#build').on('click', function () {
                 var build_tickers = [];

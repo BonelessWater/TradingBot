@@ -942,8 +942,8 @@ def data_output(ticker, data_type):
         surprise_percentage_data = [{'x': obj.fiscal_Date_Ending.strftime("%Y-%m-%d"), 'y': obj.surprise_percentage} for obj in queryset][::-1]
         return [function, ticker, json.dumps(reported_eps_data), json.dumps(estimated_eps_data), json.dumps(surprise_data), json.dumps(surprise_percentage_data)]
 
-def trade(request):
-    return render(request, 'trade.html')
+#def trade(request):
+#    return render(request, 'trade.html')
 
 def research(request):
     tickers_and_names = list(SP500Ticker.objects.all().values_list('symbol', 'name'))

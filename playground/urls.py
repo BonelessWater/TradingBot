@@ -14,7 +14,7 @@ urlpatterns = [
 
     # Redirects
     path('build', build, name='build'),    
-    path('trade', trade, name='trade'),    
+    #path('trade', trade, name='trade'),    
     path('research', research, name='research'),
     path('indicator', indicator, name='indicator'),
     
